@@ -139,14 +139,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     tokenUpAni.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
 
     nameAnimation.whenDone(tokensAnimation);
-
     nameAnimation.start();
-
-    // userProfile.loadFromPref().then((_) => setState(() {
-    //   loading = false;
-    // }));
-    // pageController.nextPage(duration: Durations.medium2, curve: Curves.decelerate);
-
     loadData();
   }
 
@@ -177,7 +170,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         localAnimation.init(this, .0, math.pi, Durations.medium2, Curves.decelerate);
         Future.delayed(Duration(milliseconds: 150 * index)).then((_) => localAnimation.start());
         return Transform.translate(
-          offset: Offset(0, -25 * localAnimation.value),
+          offset: Offset(0, -25 * math.sin(localAnimation.value)),
           child: Column(
             spacing: 3,
             children: [
@@ -220,6 +213,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       Text('${menuItem['p']} JD', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
                       Row(children: [
                         Container(
+                          height: 30,
                           padding: EdgeInsets.symmetric(horizontal: 7.5),
                           decoration: BoxDecoration(
                             color: cs.secondary,
@@ -232,20 +226,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             )
                           ),
 
-                          child: Text('-', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),),
+                          child: Center(child: Text('-', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
                         ),
 
                         Container(
+                          height: 30,
                           padding: EdgeInsets.symmetric(horizontal: 15),
                           decoration: BoxDecoration(
                               color: cs.secondary.withAlpha(50),
                               // borderRadius: BorderRadius.only(topLeft: Radius.circular(45), bottomLeft: Radius.circular(45),)
                           ),
 
-                          child: Text('0', style: TextStyle(color: cs.secondary, fontSize: size.width * .04, fontWeight: FontWeight.bold),),
+                          child: Center(child: Text('0', style: TextStyle(color: cs.secondary, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
                         ),
 
                         Container(
+                          height: 30,
                           padding: EdgeInsets.symmetric(horizontal: 7.5),
                           decoration: BoxDecoration(
                             color: cs.secondary,
@@ -258,7 +254,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             )
                           ),
 
-                          child: Text('+', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),),
+                          child: Center(child: Text('+', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
                         ),
                       ],)
                     ],
@@ -343,8 +339,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       width: size.width,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(colors: [
-                          Color(0xFF0C8A5E), // Forest Green
-                          Color(0xFF0B673D),
+                          cs.secondary, // Forest Green
+                          cs.secondary,
                         ], begin: Alignment.bottomCenter, end: Alignment.topRight),
                       ),
 
@@ -410,7 +406,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           itemBuilder: (context, index, realIndex) {
                             final banner = bannersAd[index];
                             final alTop = banner['al'] == 'top';
-                            // console.log('alTop --> ${alTop} [${banner['al']}]');
                             return SizedBox(
                               width: size.width,
                               child: Padding(

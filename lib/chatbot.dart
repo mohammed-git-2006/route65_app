@@ -112,7 +112,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
                             gradient: isUser ? LinearGradient(colors: [
                               cs.secondary.withAlpha(200), cs.secondary.withAlpha(150)
                             ], /*begin: Alignment.bottomLeft, end: Alignment.topRight*/) : LinearGradient(colors: [
-                              Color(0xfff1f1f1), Color(0xffF1F1f1),
+                              cs.secondary.withAlpha(10), cs.secondary.withAlpha(25)
                             ]),
 
                             borderRadius: BorderRadius.only(
