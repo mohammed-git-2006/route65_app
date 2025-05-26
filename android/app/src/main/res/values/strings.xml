@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="facebook_app_id">1093475762608208</string>
+    <string name="facebook_client_token">a648efcc77dfff7e17c5d32747bfeac3</string>
+    <string name="fb_login_protocol_scheme">fb1093475762608208</string>
+    <string name="app_name">Route 65</string>
+</resources>

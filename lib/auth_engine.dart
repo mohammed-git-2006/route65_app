@@ -1,0 +1,197 @@
+
+
+
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:developer' as console;
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+class UserProfile {
+  String? name, uid, location, phone, pic, fcm;
+  bool completed = false;
+  double? tokens;
+
+  Map<String, dynamic> toJson() => {
+    'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm
+  };
+
+  Map<String, dynamic> toJsonPref()  {
+    return toJson()..addAll({'uid' : uid});
+  }
+
+  void fromInstance() {
+    final currUser = FirebaseAuth.instance.currentUser!;
+    name = currUser.displayName!;
+    pic = currUser.photoURL!;
+    uid = currUser.uid;
+  }
+
+  Future<void> saveToPref() async {
+    final pref = await SharedPreferences.getInstance();
+    pref.setString('data', jsonEncode(toJsonPref()));
+
+    return;
+  }
+
+  void fromJson({required Map<String, dynamic> data, bool? pref}) {
+    name = data['n'];
+    pic = data['pic'];
+    location = data['loc'];
+    tokens = data['tok'];
+    phone = data['p'];
+    completed = data['comp'];
+    if(pref != null && pref) uid = data['uid'];
+  }
+
+  Future<void> loadFromPref() async{
+    final pref = await SharedPreferences.getInstance();
+    final data = jsonDecode(pref.getString('data')!);
+    fromJson(data: data, pref: true);
+  }
+
+  Future<void> saveToCloud() async {
+    final uploadData = toJson();
+    uploadData.remove('fcm');
+    FirebaseFirestore.instance.collection('app-users').doc(uid).set(uploadData, SetOptions(merge: true));
+  }
+
+  Future<void> fromCloud() async {
+    final cloudData = await FirebaseFirestore.instance.collection('app-users').doc(uid!).get();
+    fromJson(data: cloudData.data()!, pref: false);
+  }
+
+  Future<void> updateFCM(String? fcm) async {
+    FirebaseFirestore.instance.collection('app-users').doc(uid).set({'fcm' : fcm}, SetOptions(merge: true));
+  }
+
+  Future<void> update({String? name, String? pic, String? location, String? phone, double? tokens, bool? completed}) async {
+    if (name != null) this.name = name;
+    if (pic != null) this.pic = pic;
+    if (location != null) this.location = location;
+    if (phone != null) this.phone = phone;
+    if (tokens != null) this.tokens = tokens;
+    if (completed != null) this.completed = completed;
+    // if (fcm != null) this.fcm = fcm;
+
+    await saveToPref();
+    await saveToCloud();
+  }
+}
+
+enum CheckResult {
+  SUCCESS,
+  FIRST_TIME,
+  ERROR
+}
+
+class AuthResult {
+  late CheckResult status;
+  late String content;
+
+  AuthResult(this.status, this.content);
+}
+
+class AuthEngine {
+  final instance = FirebaseAuth.instance;
+  final firestore = FirebaseFirestore.instance;
+  final userProfile = UserProfile();
+
+  Future<AuthResult> checkLogin() async {
+    try {
+      console.log('is null ? ${instance.currentUser == null}');
+      if (instance.currentUser == null) {
+        return AuthResult(CheckResult.ERROR, 'CURRENT USER NULL');
+      }
+
+      final pref = await SharedPreferences.getInstance();
+
+      if (!pref.containsKey('data')) {
+        return AuthResult(CheckResult.ERROR, 'PREF DATA DOES NOT EXIST');
+      }
+
+      await userProfile.loadFromPref();
+
+      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, 'DONE');
+    } catch (err) {
+      return AuthResult(CheckResult.ERROR, '${err}');
+    }
+  }
+
+  Future<AuthResult> loginFacebook() async {
+    try {
+      final response = await FacebookAuth.instance.login(permissions: ['public_profile']);
+
+      if (response.status == LoginStatus.success) {
+        final accessToken = response.accessToken;
+        final userData = await FacebookAuth.instance.getUserData();
+        print(userData);
+      }
+
+      // return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '');
+      return AuthResult(CheckResult.ERROR, '---- TEST ----');
+    } catch (err) {
+      return AuthResult(CheckResult.ERROR, '$err');
+    }
+  }
+
+  Future<AuthResult> loginGoogle() async {
+    try {
+      console.log('hello');
+      final googleSignIn = GoogleSignIn();
+      final signInResult = await googleSignIn.signIn();
+      final auth = await signInResult!.authentication;
+      final cred = GoogleAuthProvider.credential(accessToken: auth.accessToken, idToken: auth.idToken);
+      await instance.signInWithCredential(cred);
+
+      userProfile.fromInstance();
+
+      final cloudData = await firestore.collection('app-users').doc(userProfile.uid!).get();
+      if (!cloudData.exists) {
+        await userProfile.saveToCloud();
+        return AuthResult(CheckResult.FIRST_TIME, '');
+      }
+
+      console.log('checked cloud exists!');
+
+      await userProfile.fromCloud();
+
+      console.log('user profile updated from instance');
+      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '$signInResult');
+    } catch(err) {
+      console.log('got error ==> $err', level: 2);
+      return AuthResult(CheckResult.ERROR, '$err');
+    }
+  }
+
+
+  static void showLocalNotification(RemoteMessage message) {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'channel_id',
+      'channel_name',
+      channelDescription: 'your channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+    );
+
+    const NotificationDetails notificationDetails =
+    NotificationDetails(android: androidDetails);
+
+    FlutterLocalNotificationsPlugin().show(
+      message.notification.hashCode,
+      message.notification?.title,
+      message.notification?.body,
+      notificationDetails,
+    );
+  }
+
+}
