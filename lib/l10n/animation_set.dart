@@ -24,6 +24,15 @@ class AnimationSet {
     controller.forward();
   }
 
+  bool _ran = false;
+
+  void startOnce() {
+    if (!_ran) {
+      this.start();
+      _ran = true;
+    }
+  }
+
   void reset() {
     controller.reset();
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:route65/auth_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:route65/chatbot.dart';
@@ -95,6 +97,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
   List<Map<String, dynamic>> bannersAd = [];
   Map<String, dynamic> menuData = {};
+  List<String> menuCats = [];
+  Map<String, FileImage> menuSavedImages = {};
 
   void loadData() async {
     await userProfile.loadFromPref();
@@ -113,12 +117,70 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final Uri menuUrl = Uri(scheme: 'https', host: 'www.route-65-dashboard.com', path: '/api/menu');
       final menuResponse = await http.get(menuUrl);
       menuData = jsonDecode(menuResponse.body) as Map<String, dynamic>;
+
+      final Uri catsUrl = Uri(scheme: 'https', host: 'www.route-65-dashboard.com', path: '/api/cats');
+      final catsResponse = await http.get(catsUrl);
+      final catsDecoded = jsonDecode(catsResponse.body);
+
+      console.log('got cats from server, transforming ...');
+      console.log('${jsonDecode(catsResponse.body).length}');
+      // (jsonDecode(catsResponse.body) as List<dynamic>).((itemIn) => /*menuCats.add(itemIn as String)*/ console.log('--> cat --> ${itemIn}'));
+      List.generate(catsDecoded.length, (i) => menuCats.add(catsDecoded[i]));
+
+      console.log('--> menu cats ${menuCats}');
+
+      console.log('loading all animations ...');
+      loadAllAnimationsForMenuItems();
     } catch (err) {
       console.log('banner data error --> ${err}');
       connectionError = true;
     }
 
     if (!lr) connectionError = true;
+
+    try {
+      final path = await getApplicationDocumentsDirectory();
+      for(String cat in menuCats) {
+        final catData = menuData[cat];
+
+        for(final item in catData) {
+          final File saveFile = File('${path.path}/${item['i']}.jgp');
+
+          if(!(await saveFile.exists())) {
+            console.log('[${item['i']}] does not exists, loading image from server ...');
+            final Uri imageUrl = Uri(scheme:'https', host: 'www.route-65-dashboard.com', path: '/api/menu/${item['i']}');
+            final imageResponse = await http.get(imageUrl);
+            await saveFile.writeAsBytes(imageResponse.bodyBytes);
+          }
+
+          menuSavedImages.addAll({'${item['i']}' : FileImage(saveFile)});
+        }
+      }
+
+      for(final bannerData in bannersAd) {
+        File bannerImageFile = File('${path.path}/${bannerData['id']}.jpg');
+        if ( (await bannerImageFile.exists())) {
+          final Uri bannerImageUrl = Uri.parse(bannerData['img'] as String);
+          final bannerImageResponse = await http.get(bannerImageUrl);
+          bannerImageFile.writeAsBytes(bannerImageResponse.bodyBytes);
+        }
+
+        menuSavedImages.addAll({'${bannerData['id']}' : FileImage(bannerImageFile)});
+      }
+    } on Exception catch (e) {
+      console.log('error occured while loading images ==> ${e}');
+      setState(() {
+        loading = false;
+        connectionError = true;
+      });
+
+      console.log('starting animations ...');
+      startAnimationsTrailFor('Chicken');
+
+      return;
+    }
+
+    console.log('final images list --> ${menuSavedImages}');
 
     setState(() {
       loading = false;
@@ -147,17 +209,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
   Widget carouselViewText(dynamic banner, dynamic size, bool isAr, bool alTop) {
     final style = TextStyle(color: Color(banner['fg']), fontSize: size.width * .055, overflow: TextOverflow.visible);
-    if (isAr && alTop)   return Positioned(top: 0, right: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
-    if (isAr && !alTop)  return  Positioned(bottom: 0, right: 0,child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
-    if (!isAr && alTop)  return  Positioned(top: 0, left: 0,child: SizedBox(width: size.width * .6, child: Text('${banner['ten']}', style: style,)));
-    else return  Positioned(bottom: 0, left: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['ten']}', style: style,)));
+    if (isAr && alTop)   return  Positioned(top: 0    , right: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
+    if (isAr && !alTop)  return  Positioned(bottom: 0 , right: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
+    if (!isAr && alTop)  return  Positioned(top: 0    , left: 0 , child: SizedBox(width: size.width * .6, child: Text('${banner['ten']}', style: style,)));
+    else return                  Positioned(bottom: 0 , left: 0 , child: SizedBox(width: size.width * .6, child: Text('${banner['ten']}', style: style,)));
   }
 
+  Map<String, List<AnimationSet>> listItemsAnimations = {};
+
+  void loadAllAnimationsForMenuItems() {
+    for(String cat in menuCats) {
+      List<AnimationSet> animationsForCat = [];
+      // console.log('getting animations for ${cat}');
+
+      for(int i=0;i<menuData[cat].length;++i) {
+        final animation = new AnimationSet();
+        animationsForCat.add(animation..init(this, .0, math.pi, Durations.medium2, Curves.easeInBack));
+      }
+
+      listItemsAnimations.addAll({cat: animationsForCat});
+    }
+  }
+
+  void startAnimationsTrailFor(String cat) {
+    int i = 0;
+    for(final animation in listItemsAnimations[cat]!) {
+      animation.reset();
+      Future.delayed(Duration(milliseconds: 100 * i)).then((_) => animation.start());
+      i += 1;
+    }
+  }
 
   Widget getMenuItemsView(String category) {
     final isAr = Directionality.of(context) == TextDirection.rtl;
     final cs = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
+
     return GridView.count(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
@@ -166,11 +253,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       childAspectRatio: .8,
       children: List.generate(menuData[category].length, (index) {
         final menuItem = menuData[category][index];
-        AnimationSet localAnimation = AnimationSet();
-        localAnimation.init(this, .0, math.pi, Durations.medium2, Curves.decelerate);
-        Future.delayed(Duration(milliseconds: 150 * index)).then((_) => localAnimation.start());
+
         return Transform.translate(
-          offset: Offset(0, -25 * math.sin(localAnimation.value)),
+          offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value)),
           child: Column(
             spacing: 3,
             children: [
@@ -188,7 +273,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     decoration: BoxDecoration(
                         color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
                         borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(image: CachedNetworkImageProvider('https://www.route-65-dashboard.com/api/menu/${menuItem['i']}'),
+                        image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
                             fit: BoxFit.cover)
                     ),
                   ),
@@ -334,61 +419,64 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                 SingleChildScrollView(
                   child: Column(children: [
-                    Container(
-                      // height: size.height * .5,
-                      width: size.width,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [
-                          cs.secondary, // Forest Green
-                          cs.secondary,
-                        ], begin: Alignment.bottomCenter, end: Alignment.topRight),
-                      ),
+                    ClipPath(
+                      clipper: UShapeClipper(),
+                      child: Container(
+                        // height: size.height * .5,
+                        width: size.width,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [
+                            cs.secondary, // Forest Green
+                            cs.secondary,
+                          ], begin: Alignment.bottomCenter, end: Alignment.topRight),
+                        ),
 
-                      child: SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 15),
-                          child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Transform.translate(offset:  Offset((1 - nameAnimation.value) * -size.width, 0), child: Opacity(
-                              opacity: nameAnimation.value,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .065,
-                                      overflow: TextOverflow.ellipsis),
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 15),
+                            child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Transform.translate(offset:  Offset((1 - nameAnimation.value) * -size.width, 0), child: Opacity(
+                                opacity: nameAnimation.value,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .065,
+                                        overflow: TextOverflow.ellipsis),
+                                      ),
                                     ),
-                                  ),
 
-                                  CircleAvatar(
-                                    radius: 25,
-                                    backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
+                                    )
+                                  ],
+                                ),
+                              ),),
+
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${userProfile.location} - ${userProfile.phone}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Transform.translate(offset: Offset(.0, -10 * math.sin(tokenUpAni.value * math.pi)), child: Text('${userProfile.tokens}', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
+                                      SizedBox(width: 5,),
+                                      Image.asset('assets/token.png', color: Colors.white, colorBlendMode: BlendMode.srcIn, width: 20,),
+                                      IconButton(icon: FaIcon(FontAwesomeIcons.refresh, color: cs.surface, size: 20,), onPressed: () {
+                                        tokenUpAni.reset();
+
+                                        loadData();
+                                      },),
+                                    ],
                                   )
                                 ],
                               ),
-                            ),),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${userProfile.location} - ${userProfile.phone}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                Row(
-                                  children: [
-                                    Transform.translate(offset: Offset(.0, -10 * math.sin(tokenUpAni.value * math.pi)), child: Text('${userProfile.tokens}', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
-                                    SizedBox(width: 5,),
-                                    Image.asset('assets/token.png', color: Colors.white, colorBlendMode: BlendMode.srcIn, width: 20,),
-                                    IconButton(icon: FaIcon(FontAwesomeIcons.refresh, color: cs.surface, size: 20,), onPressed: () {
-                                      tokenUpAni.reset();
-
-                                      loadData();
-                                    },),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ],),
+                            ],),
+                          ),
                         ),
                       ),
                     ),
@@ -416,7 +504,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     decoration: BoxDecoration(
                                       color: cs.secondary,
                                       borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(image: CachedNetworkImageProvider(banner['img']), fit: BoxFit.cover),
+                                      image: DecorationImage(image: menuSavedImages['${banner['id']}'] as ImageProvider, fit: BoxFit.cover),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -452,12 +540,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   [dic.chicken, 'Chicken', 'mixcheese_chicken'],
                                   [dic.beef, 'Beef', '65_beef'],
                                   [dic.hotdogs, 'Hotdog', 'hotdog'],
-                                  [dic.appetizers, 'Appetizers', 'ceaser']
+                                  [dic.appetizers, 'Appetizers', 'ceaser'],
                                 ].map((pair) {
                                 return GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       selectedCategory = pair[1];
+                                      startAnimationsTrailFor(pair[1]);
                                     });
                                   },
                                   child: Container(
@@ -475,7 +564,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                         height: size.width * .12,
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(45),
-                                          image: DecorationImage(image: CachedNetworkImageProvider('https://www.route-65-dashboard.com/api/menu/${pair[2]}'),
+                                          image: DecorationImage(image: menuSavedImages[pair[2]] as ImageProvider,
                                             fit: BoxFit.cover)
                                         ),
                                       ),
@@ -617,12 +706,12 @@ class UShapeClipper extends CustomClipper<Path> {
     final path = Path();
 
     // Start at top-left
-    path.lineTo(0, size.height - 40);
+    path.lineTo(0, size.height - 20);
 
     // Create the "U" with a quadratic bezier
     path.quadraticBezierTo(
-      size.width / 2, size.height + 40, // control point (deepest part)
-      size.width, size.height - 40,     // end of curve
+      size.width / 2, size.height + 20, // control point (deepest part)
+      size.width, size.height - 20,     // end of curve
     );
 
     // Close the shape at the top-right
