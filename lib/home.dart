@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -8,10 +9,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+//import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
+//import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:route65/auth_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:route65/chatbot.dart';
@@ -34,7 +37,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   UserProfile userProfile = UserProfile();
   bool loading = true;
-  final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet();
+  final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet(), qrCodeAnimation = AnimationSet();
 
   void setupNotifications() async {
     final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -117,19 +120,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final Uri menuUrl = Uri(scheme: 'https', host: 'www.route-65-dashboard.com', path: '/api/menu');
       final menuResponse = await http.get(menuUrl);
       menuData = jsonDecode(menuResponse.body) as Map<String, dynamic>;
-
       final Uri catsUrl = Uri(scheme: 'https', host: 'www.route-65-dashboard.com', path: '/api/cats');
       final catsResponse = await http.get(catsUrl);
       final catsDecoded = jsonDecode(catsResponse.body);
-
       console.log('got cats from server, transforming ...');
       console.log('${jsonDecode(catsResponse.body).length}');
-      // (jsonDecode(catsResponse.body) as List<dynamic>).((itemIn) => /*menuCats.add(itemIn as String)*/ console.log('--> cat --> ${itemIn}'));
       List.generate(catsDecoded.length, (i) => menuCats.add(catsDecoded[i]));
-
-      console.log('--> menu cats ${menuCats}');
-
-      console.log('loading all animations ...');
       loadAllAnimationsForMenuItems();
     } catch (err) {
       console.log('banner data error --> ${err}');
@@ -159,7 +155,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
       for(final bannerData in bannersAd) {
         File bannerImageFile = File('${path.path}/${bannerData['id']}.jpg');
-        if ( (await bannerImageFile.exists())) {
+        if (!(await bannerImageFile.exists())) {
           final Uri bannerImageUrl = Uri.parse(bannerData['img'] as String);
           final bannerImageResponse = await http.get(bannerImageUrl);
           bannerImageFile.writeAsBytes(bannerImageResponse.bodyBytes);
@@ -168,19 +164,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         menuSavedImages.addAll({'${bannerData['id']}' : FileImage(bannerImageFile)});
       }
     } on Exception catch (e) {
-      console.log('error occured while loading images ==> ${e}');
       setState(() {
         loading = false;
         connectionError = true;
       });
 
-      console.log('starting animations ...');
       startAnimationsTrailFor('Chicken');
 
       return;
     }
-
-    console.log('final images list --> ${menuSavedImages}');
 
     setState(() {
       loading = false;
@@ -199,9 +191,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     nameAnimation.init(this, .0, 1.0, Durations.long1, Curves.easeIn);
     tokensAnimation.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
     tokenUpAni.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
+    qrCodeAnimation.init(this, 1.0, 0.3, Durations.medium2, Curves.easeIn);
 
     nameAnimation.whenDone(tokensAnimation);
     nameAnimation.start();
+
     loadData();
   }
 
@@ -224,7 +218,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
       for(int i=0;i<menuData[cat].length;++i) {
         final animation = new AnimationSet();
-        animationsForCat.add(animation..init(this, .0, math.pi, Durations.medium2, Curves.easeInBack));
+        animation.init(this, .0, math.pi, Durations.medium1, Curves.decelerate);
+        animationsForCat.add(animation);
       }
 
       listItemsAnimations.addAll({cat: animationsForCat});
@@ -245,115 +240,152 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final cs = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 15,
-      childAspectRatio: .8,
-      children: List.generate(menuData[category].length, (index) {
-        final menuItem = menuData[category][index];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        mainAxisSpacing: 15,
+        crossAxisSpacing: 0,
+        childAspectRatio: .625,
+        children: List.generate(menuData[category].length, (index) {
+          final menuItem = menuData[category][index];
 
-        return Transform.translate(
-          offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value)),
-          child: Column(
-            spacing: 3,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/meal_view', arguments: {
-                    'data' : menuItem
-                  });
-                },
-                child: Hero(
-                  tag: '${menuItem['ne']}',
-                  child: Container(
-                    width: size.width * .45,
-                    height: size.width * .45,
-                    decoration: BoxDecoration(
-                        color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
-                        borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
-                            fit: BoxFit.cover)
+          return Transform.translate(
+            offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value)),
+            child: Container(
+              margin: EdgeInsets.all(5),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: cs.secondary.withAlpha(25), blurRadius: 10, spreadRadius: 5)
+                ]
+              ),
+              child: Column(
+                spacing: 5,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/meal_view', arguments: {
+                        'data' : menuItem,
+                        'image_provider' : menuSavedImages['${menuItem['i']}']
+                      });
+                    },
+                    child: Hero(
+                      tag: '${menuItem['ne']}',
+                      child: Container(
+                        width: size.width * .45,
+                        height: size.width * .45,
+                        decoration: BoxDecoration(
+                            color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
+                            borderRadius: BorderRadius.circular(15),
+                            image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
+                                fit: BoxFit.cover)
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  // SizedBox(),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
+                      Row(
+                        children: [
+                          Expanded(child: Center(child: Text('${menuItem[isAr ? 'na' : 'ne']}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.bold),))),
+                        ],
+                      ),
+
+                      Text('${menuItem['c'].map((c) {
+                        return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
+                      })}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
+
+                      Row(
+                        spacing: 5,
+                        mainAxisAlignment:MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${menuItem['p']} JD', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
+                          Row(children: [
+                            /*Container(
+                              height: 30,
+                              padding: EdgeInsets.symmetric(horizontal: 7.5),
+                              decoration: BoxDecoration(
+                                color: cs.secondary,
+                                borderRadius: !isAr ? BorderRadius.only(
+                                  topLeft: Radius.circular(45),
+                                  bottomLeft: Radius.circular(45),
+                                ) : BorderRadius.only(
+                                  topRight: Radius.circular(45),
+                                  bottomRight: Radius.circular(45),
+                                )
+                              ),
+
+                              child: Center(child: Text('-', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
+                            ),
+
+                            Container(
+                              height: 30,
+                              padding: EdgeInsets.symmetric(horizontal: 15),
+                              decoration: BoxDecoration(
+                                  color: cs.secondary.withAlpha(50),
+                                  // borderRadius: BorderRadius.only(topLeft: Radius.circular(45), bottomLeft: Radius.circular(45),)
+                              ),
+
+                              child: Center(child: Text('0', style: TextStyle(color: cs.secondary, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
+                            ),*/
+                            /*Container(
+                              height: 30,
+                              width: 30,
+                              // padding: EdgeInsets.symmetric(horizontal: 7.5),
+                              // padding: EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: cs.secondary,
+                                borderRadius: isAr ? BorderRadius.only(
+                                  topLeft: Radius.circular(45),
+                                  bottomLeft: Radius.circular(45),
+                                ) : BorderRadius.only(
+                                  topRight: Radius.circular(45),
+                                  bottomRight: Radius.circular(45),
+                                ) //BorderRadius.circular(45)
+                              ),
+
+                              child: Center(child: Transform.translate(offset: Offset(0, -1), child: Text('+', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),))),
+                            ),*/
+
+                            SizedBox(
+                              width: 30,
+                              height: 30,
+                              child: IconButton(
+                                style: IconButton.styleFrom(backgroundColor: cs.secondary),
+                                color: cs.surface,
+                                icon: FaIcon(FontAwesomeIcons.add, size: 15,),
+                                onPressed: () {
+                                  print('hello');
+                                  console.log('hello');
+                                  print('${menuData['cs'][menuItem['c'][0]][1]}');
+                                },
+                              ),
+                            )
+                          ],)
+                        ],
+                      ),
+                    ],),
+                  )
+                ],
               ),
-
-              // SizedBox(),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
-                  Row(
-                    children: [
-                      Expanded(child: Center(child: Text('${menuItem[isAr ? 'na' : 'ne']}', style: TextStyle(overflow: TextOverflow.ellipsis),))),
-                    ],
-                  ),
-
-                  Row(
-                    spacing: 5,
-                    mainAxisAlignment:MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${menuItem['p']} JD', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
-                      Row(children: [
-                        Container(
-                          height: 30,
-                          padding: EdgeInsets.symmetric(horizontal: 7.5),
-                          decoration: BoxDecoration(
-                            color: cs.secondary,
-                            borderRadius: !isAr ? BorderRadius.only(
-                              topLeft: Radius.circular(45),
-                              bottomLeft: Radius.circular(45),
-                            ) : BorderRadius.only(
-                              topRight: Radius.circular(45),
-                              bottomRight: Radius.circular(45),
-                            )
-                          ),
-
-                          child: Center(child: Text('-', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
-                        ),
-
-                        Container(
-                          height: 30,
-                          padding: EdgeInsets.symmetric(horizontal: 15),
-                          decoration: BoxDecoration(
-                              color: cs.secondary.withAlpha(50),
-                              // borderRadius: BorderRadius.only(topLeft: Radius.circular(45), bottomLeft: Radius.circular(45),)
-                          ),
-
-                          child: Center(child: Text('0', style: TextStyle(color: cs.secondary, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
-                        ),
-
-                        Container(
-                          height: 30,
-                          padding: EdgeInsets.symmetric(horizontal: 7.5),
-                          decoration: BoxDecoration(
-                            color: cs.secondary,
-                            borderRadius: isAr ? BorderRadius.only(
-                              topLeft: Radius.circular(45),
-                              bottomLeft: Radius.circular(45),
-                            ) : BorderRadius.only(
-                              topRight: Radius.circular(45),
-                              bottomRight: Radius.circular(45),
-                            )
-                          ),
-
-                          child: Center(child: Text('+', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
-                        ),
-                      ],)
-                    ],
-                  ),
-                ],),
-              )
-            ],
-          ),
-        );
-      },),
+            ),
+          );
+        },),
+      ),
     );
   }
 
   String selectedCategory = 'Chicken';
+  bool scanningCode = true;
 
 
   @override
@@ -364,33 +396,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final isAr = Directionality.of(context) == TextDirection.rtl;
 
     return Scaffold(
-      /*floatingActionButton: connectionError ? null : Row(
-        mainAxisSize: MainAxisSize.min,
-        textDirection: TextDirection.ltr,
-        spacing: 15,
-        children: [
-          SpeedDial(
-            backgroundColor: cs.secondary,
-            direction: SpeedDialDirection.up,
-            icon: (FontAwesomeIcons.add),
-            activeIcon: (FontAwesomeIcons.add),
-            useRotationAnimation: true,
-            animationDuration: Durations.short2,
-            animationCurve: Curves.easeIn,
-            animationAngle: math.pi / 4,
-            spacing: 15,
-            children: [
-              SpeedDialChild(child: FaIcon(FontAwesomeIcons.cartShopping, color: Colors.white,), backgroundColor: cs.secondary, visible: true, ),
-              SpeedDialChild(child: FaIcon(FontAwesomeIcons.robot   , color: Colors.white,), backgroundColor: cs.secondary, visible: true, onTap: () =>
-                  Navigator.of(context).pushNamed('/chatbot')),
-              SpeedDialChild(child: FaIcon(FontAwesomeIcons.qrcode  , color: Colors.white), backgroundColor: cs.secondary, visible: true, ),
-            ],
-          ),
-          
-
-        ],
-      ),*/
-
       body: loading ? Center(child: CircularProgressIndicator(),) : connectionError ? NoInternetPage(refreshCallback: () {
         setState(() {
           loading = true;
@@ -409,13 +414,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               },
               controller: pageController,
               children: [
-                Column(children: [
-                  Text('QR code here')
-                ],),
+                SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(children: [
+                      SizedBox(height: (size.height / 2.0) - (size.width / 2.0), width: .0,),
+                      /*Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: size.width * .5,
+                            height: size.width * .5,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: MobileScanner(
+                                onDetect: (barcodes) {
+                                  print('--> scanningCode = ${scanningCode}');
 
-                Column(children: [
-                  Text('Your basket here')
-                ],),
+                                  if (!scanningCode) {
+                                    scanningCode = true;
+                                    qrCodeAnimation.start();
+                                    print(' --> ${barcodes.barcodes[0].displayValue}');
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+
+                          Container(
+                            width: size.width * .5,
+                            height: size.width * .5,
+                            decoration: BoxDecoration(
+                              borderRadius : BorderRadius.circular(20),
+                              color: Colors.black.withAlpha((qrCodeAnimation.value * 250).toInt()),
+                            ),
+                          )
+                        ],
+                      )*/
+                    ],),
+                  ),
+                ),
 
                 SingleChildScrollView(
                   child: Column(children: [
@@ -499,11 +536,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               child: Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(25),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: cs.secondary,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(0),
                                       image: DecorationImage(image: menuSavedImages['${banner['id']}'] as ImageProvider, fit: BoxFit.cover),
                                     ),
                                     child: Container(
@@ -618,6 +655,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   ],),
                 ),
 
+
+                Column(children: [
+                  Text('Your basket here')
+                ],),
+
                 ChatBotPage()
               ],
             ),
@@ -645,25 +687,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   setState(() {
                     currentPage = 2;
                   });
-                }, child: FaIcon(FontAwesomeIcons.home, color: currentPage == 2 ? cs.secondary : cs.primary,),
-              ),
-
-              GestureDetector(
-                onTap: () {
-                  pageController.animateToPage(1, duration: Durations.medium2, curve: Curves.decelerate);
-                  setState(() {
-                    currentPage = 1;
-                  });
                 },
                 child: SizedBox(width:30, height: 30, child: Stack(
                   children: [
-                    Positioned.fill(child: FaIcon(FontAwesomeIcons.basketShopping, color: currentPage == 1 ? cs.secondary : cs.primary,size: 25,)),
+                    Positioned.fill(child: FaIcon(FontAwesomeIcons.basketShopping, color: currentPage == 2 ? cs.secondary : cs.primary,size: 25,)),
                     Positioned(top: 0, right: 0, child: Transform.translate(
                       offset: Offset(15, -15),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: cs.secondary,
-                          borderRadius: BorderRadius.circular(45)
+                            color: cs.secondary,
+                            borderRadius: BorderRadius.circular(45)
                         ),
 
                         width: 20,
@@ -676,12 +709,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 )),
               ),
 
+              GestureDetector(
+                onTap: () {
+                  pageController.animateToPage(1, duration: Durations.medium2, curve: Curves.decelerate);
+                  setState(() {
+                    currentPage = 1;
+                  });
+                }, child: FaIcon(FontAwesomeIcons.home, color: currentPage == 1 ? cs.secondary : cs.primary,),
+              ),
+
               GestureDetector(onTap: () {
                 pageController.animateToPage(0, duration: Durations.medium2, curve: Curves.decelerate);
                 setState(() {
                   currentPage = 0;
                 });
-              },child: FaIcon(FontAwesomeIcons.qrcode, color: currentPage == 0 ? cs.secondary : cs.primary,)),
+
+              }, child: FaIcon(FontAwesomeIcons.mapLocationDot, color: currentPage == 0 ? cs.secondary : cs.primary,),),
+
+
+              GestureDetector(onTap: () {
+                /*pageController.animateToPage(0, duration: Durations.medium2, curve: Curves.decelerate);
+                setState(() {
+                  currentPage = 0;
+                });*/
+              },child: FaIcon(FontAwesomeIcons.qrcode, /*color: currentPage == 0 ? cs.secondary : cs.primary,*/)),
             ],),
           )
         ],
@@ -706,7 +757,7 @@ class UShapeClipper extends CustomClipper<Path> {
     final path = Path();
 
     // Start at top-left
-    path.lineTo(0, size.height - 20);
+    path.lineTo(0, size.height-20);
 
     // Create the "U" with a quadratic bezier
     path.quadraticBezierTo(

@@ -207,7 +207,13 @@ class _ChatBotPageState extends State<ChatBotPage> {
         // 'content' : messageContent
       });
     });
-    scrollController.animateTo(scrollController.position.maxScrollExtent + MediaQuery.of(context).size.height / 2.0, duration: Durations.medium1, curve: Curves.easeIn,);
+    try {
+      print('--> openai conversation length ==> ${openai.conversation.length}');
+      if (openai.conversation.length > 2)
+        await scrollController.animateTo(scrollController.position.maxScrollExtent + MediaQuery.of(context).size.height / 2.0, duration: Durations.medium1, curve: Curves.easeIn,);
+    } on Exception catch (e) {
+      // TODO
+    }
     // scrollController.jumpTo(scrollController.position.maxScrollExtent);
     final message = await openai.sendMessage(messageContent, userProfile.uid!);
     print('status ==> ${message.status}');

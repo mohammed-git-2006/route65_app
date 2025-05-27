@@ -29,7 +29,7 @@ class _MealViewState extends State<MealView> {
           width: size.width,
           height: 350,
           decoration: BoxDecoration(
-            image: DecorationImage(image: CachedNetworkImageProvider('https://www.route-65-dashboard.com/api/menu/${data['i']}'),
+            image: DecorationImage(image: args['image_provider'] as ImageProvider,
               fit: BoxFit.cover)
           ),
         ),

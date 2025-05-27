@@ -34,6 +34,7 @@ class AnimationSet {
   }
 
   void reset() {
+    _ran = false;
     controller.reset();
   }
 

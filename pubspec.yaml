@@ -59,6 +59,7 @@ dependencies:
   flutter_facebook_auth: ^7.1.2
   carousel_slider: ^5.0.0
   path_provider: ^2.1.5
+  mobile_scanner: ^7.0.0
 
 dev_dependencies:
   flutter_test:
