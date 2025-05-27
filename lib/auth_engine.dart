@@ -19,9 +19,10 @@ class UserProfile {
   String? name, uid, location, phone, pic, fcm;
   bool completed = false;
   double? tokens;
+  List<int> liked = [];
 
   Map<String, dynamic> toJson() => {
-    'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm
+    'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked
   };
 
   Map<String, dynamic> toJsonPref()  {
@@ -43,13 +44,37 @@ class UserProfile {
   }
 
   void fromJson({required Map<String, dynamic> data, bool? pref}) {
+    liked.clear();
     name = data['n'];
     pic = data['pic'];
     location = data['loc'];
     tokens = data['tok'];
     phone = data['p'];
     completed = data['comp'];
+    final likedPlaceholder = data['liked'] as List<dynamic>;
+    for(final item in likedPlaceholder) liked.add(int.parse('$item'));
+    console.log('${likedPlaceholder} --> ${liked}');
     if(pref != null && pref) uid = data['uid'];
+  }
+
+  Future<bool> changeLiked(int id) async {
+    bool r = false;
+    for (int i=0;i<liked.length;++i) {
+      if (liked[i] == id) {
+        r = true;
+        liked.removeAt(i);
+        break;
+      }
+    }
+
+    if (!r) {
+      liked.add(id);
+    }
+
+    FirebaseFirestore.instance.collection('app-users').doc(uid).set({'liked' : liked}, SetOptions(merge: true));
+    await saveToPref();
+
+    return r;
   }
 
   Future<void> loadFromPref() async{

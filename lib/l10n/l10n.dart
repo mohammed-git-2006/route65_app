@@ -269,6 +269,12 @@ abstract class L10n {
   /// **'start chat ...'**
   String get robot_sc;
 
+  /// No description provided for @piece.
+  ///
+  /// In en, this message translates to:
+  /// **'piece'**
+  String get piece;
+
   /// No description provided for @a3.
   ///
   /// In en, this message translates to:

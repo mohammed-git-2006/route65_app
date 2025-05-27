@@ -96,6 +96,9 @@ class L10nEn extends L10n {
   String get robot_sc => 'start chat ...';
 
   @override
+  String get piece => 'piece';
+
+  @override
   String get a3 => '3rd Area';
 
   @override

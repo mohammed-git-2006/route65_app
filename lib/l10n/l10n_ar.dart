@@ -96,6 +96,9 @@ class L10nAr extends L10n {
   String get robot_sc => 'إبدأ محادثة ...';
 
   @override
+  String get piece => 'قطع';
+
+  @override
   String get a3 => 'السّكنية الثالثة';
 
   @override

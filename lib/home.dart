@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:gif/gif.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
@@ -102,9 +104,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   Map<String, dynamic> menuData = {};
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
+  Map<int, GifController> menuLikesGifs = {};
 
   void loadData() async {
     await userProfile.loadFromPref();
+    setupNotifications();
     final lr = await loadTokensFromServer();
 
     try {
@@ -141,6 +145,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
         for(final item in catData) {
           final File saveFile = File('${path.path}/${item['i']}.jgp');
+          // final gifController = new GifController(vsync: this);
+          // if(userProfile.liked.contains(item['id'])) {
+          //   gifController.animateTo(.5);
+          // }
+          menuLikesGifs.addAll({item['id'] : GifController(vsync: this)});
+
 
           if(!(await saveFile.exists())) {
             console.log('[${item['i']}] does not exists, loading image from server ...');
@@ -180,13 +190,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     });
   }
 
-  int currentPage = 2;
+  int currentPage = 1;
 
   @override
   void initState() {
     super.initState();
-
-    setupNotifications();
 
     nameAnimation.init(this, .0, 1.0, Durations.long1, Curves.easeIn);
     tokensAnimation.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
@@ -199,7 +207,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     loadData();
   }
 
-  PageController pageController = PageController(initialPage: 2);
+  PageController pageController = PageController(initialPage: 1);
 
   Widget carouselViewText(dynamic banner, dynamic size, bool isAr, bool alTop) {
     final style = TextStyle(color: Color(banner['fg']), fontSize: size.width * .055, overflow: TextOverflow.visible);
@@ -240,6 +248,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final cs = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
 
+    final List<dynamic> modifiedList = [];
+    List<int> modificationMap = [];//List.generate((menuData[category] as List<dynamic>).length, (i) => i);
+
+    for(int i=0;i<menuData[category].length;++i) {
+      final originalItem = menuData[category][i];
+      if (userProfile.liked.contains(originalItem['id'] as int)) {
+        modifiedList.add(originalItem);
+      } else {
+        modificationMap.add(i);
+      }
+    }
+
+    print('liked indexes    --> ${userProfile.liked}');
+    print('un added indexes --> $modificationMap');
+
+    for (int unAddedIndex in modificationMap) {
+      modifiedList.add(menuData[category][unAddedIndex]);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
       child: GridView.count(
@@ -250,7 +277,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         crossAxisSpacing: 0,
         childAspectRatio: .625,
         children: List.generate(menuData[category].length, (index) {
-          final menuItem = menuData[category][index];
+          final menuItem = modifiedList[index];
+          final isLiked = userProfile.liked.contains(menuItem['id'] as int);
 
           return Transform.translate(
             offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value)),
@@ -267,25 +295,49 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               child: Column(
                 spacing: 5,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/meal_view', arguments: {
-                        'data' : menuItem,
-                        'image_provider' : menuSavedImages['${menuItem['i']}']
-                      });
-                    },
-                    child: Hero(
-                      tag: '${menuItem['ne']}',
-                      child: Container(
-                        width: size.width * .45,
-                        height: size.width * .45,
-                        decoration: BoxDecoration(
-                            color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
-                            borderRadius: BorderRadius.circular(15),
-                            image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
-                                fit: BoxFit.cover)
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Hero(
+                            tag: '${menuItem['ne']}',
+                            child: Container(
+                              width: size.width * .45,
+                              height: size.width * .45,
+                              decoration: BoxDecoration(
+                                  color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
+                                  borderRadius: BorderRadius.circular(15),
+                                  image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
+                                      fit: BoxFit.cover)
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: GestureDetector(
+                            onTap: () async{
+                              console.log('${menuLikesGifs}');
+                              await userProfile.changeLiked(menuItem['id']);
+                              setState(() {
+
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(45),
+                              ),
+
+                              padding: EdgeInsets.all(7),
+                              child: isLiked ?  Image.asset('assets/heart_filled.png',    width: 15, color: Colors.red.shade800, colorBlendMode: BlendMode.srcIn) :
+                                                Image.asset('assets/heart_unfilled.png',  width: 15),
+                            ),
+                          ),
+                        )
+                      ],
                     ),
                   ),
 
@@ -300,9 +352,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ],
                       ),
 
-                      Text('${menuItem['c'].map((c) {
+                      Text('${category != 'Appetizers' ? menuItem['c'].map((c) {
                         return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
-                      })}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
+                      }) : (menuItem['id'] == 18 ? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
 
                       Row(
                         spacing: 5,
@@ -310,52 +362,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         children: [
                           Text('${menuItem['p']} JD', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
                           Row(children: [
-                            /*Container(
-                              height: 30,
-                              padding: EdgeInsets.symmetric(horizontal: 7.5),
-                              decoration: BoxDecoration(
-                                color: cs.secondary,
-                                borderRadius: !isAr ? BorderRadius.only(
-                                  topLeft: Radius.circular(45),
-                                  bottomLeft: Radius.circular(45),
-                                ) : BorderRadius.only(
-                                  topRight: Radius.circular(45),
-                                  bottomRight: Radius.circular(45),
-                                )
-                              ),
-
-                              child: Center(child: Text('-', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
-                            ),
-
-                            Container(
-                              height: 30,
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              decoration: BoxDecoration(
-                                  color: cs.secondary.withAlpha(50),
-                                  // borderRadius: BorderRadius.only(topLeft: Radius.circular(45), bottomLeft: Radius.circular(45),)
-                              ),
-
-                              child: Center(child: Text('0', style: TextStyle(color: cs.secondary, fontSize: size.width * .04, fontWeight: FontWeight.bold),)),
-                            ),*/
-                            /*Container(
-                              height: 30,
-                              width: 30,
-                              // padding: EdgeInsets.symmetric(horizontal: 7.5),
-                              // padding: EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: cs.secondary,
-                                borderRadius: isAr ? BorderRadius.only(
-                                  topLeft: Radius.circular(45),
-                                  bottomLeft: Radius.circular(45),
-                                ) : BorderRadius.only(
-                                  topRight: Radius.circular(45),
-                                  bottomRight: Radius.circular(45),
-                                ) //BorderRadius.circular(45)
-                              ),
-
-                              child: Center(child: Transform.translate(offset: Offset(0, -1), child: Text('+', style: TextStyle(color: cs.surface, fontSize: size.width * .04, fontWeight: FontWeight.bold),))),
-                            ),*/
-
                             SizedBox(
                               width: 30,
                               height: 30,
@@ -363,10 +369,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 style: IconButton.styleFrom(backgroundColor: cs.secondary),
                                 color: cs.surface,
                                 icon: FaIcon(FontAwesomeIcons.add, size: 15,),
-                                onPressed: () {
-                                  print('hello');
-                                  console.log('hello');
-                                  print('${menuData['cs'][menuItem['c'][0]][1]}');
+                                onPressed: () async {
+                                  Navigator.pushNamed(context, '/meal_view', arguments: {
+                                    'data' : menuItem,
+                                    'image_provider' : menuSavedImages[menuItem['i']]
+                                  });
                                 },
                               ),
                             )
@@ -407,6 +414,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         children: [
           Expanded(
             child: PageView(
+              physics: NeverScrollableScrollPhysics(),
               onPageChanged: (value) {
                 setState(() {
                   currentPage = value;
@@ -418,38 +426,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   child: SingleChildScrollView(
                     child: Column(children: [
                       SizedBox(height: (size.height / 2.0) - (size.width / 2.0), width: .0,),
-                      /*Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: size.width * .5,
-                            height: size.width * .5,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: MobileScanner(
-                                onDetect: (barcodes) {
-                                  print('--> scanningCode = ${scanningCode}');
-
-                                  if (!scanningCode) {
-                                    scanningCode = true;
-                                    qrCodeAnimation.start();
-                                    print(' --> ${barcodes.barcodes[0].displayValue}');
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-
-                          Container(
-                            width: size.width * .5,
-                            height: size.width * .5,
-                            decoration: BoxDecoration(
-                              borderRadius : BorderRadius.circular(20),
-                              color: Colors.black.withAlpha((qrCodeAnimation.value * 250).toInt()),
-                            ),
-                          )
-                        ],
-                      )*/
                     ],),
                   ),
                 ),
@@ -472,7 +448,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 15),
                             child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Transform.translate(offset:  Offset((1 - nameAnimation.value) * -size.width, 0), child: Opacity(
+                              /*Transform.translate(offset:  Offset((1 - nameAnimation.value) * -size.width, 0), child: Opacity(
                                 opacity: nameAnimation.value,
                                 child: Row(
                                   children: [
@@ -489,14 +465,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     )
                                   ],
                                 ),
-                              ),),
+                              ),),*/
 
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '${userProfile.location} - ${userProfile.phone}',
-                                    style: TextStyle(color: Colors.white),
+                                  Row(
+                                    spacing: 10,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 25,
+                                        backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
+                                      ),
+
+                                      Text(
+                                        userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .035,
+                                          overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ],
                                   ),
                                   Row(
                                     children: [
@@ -675,7 +661,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
             height: 70,
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, textDirection: isAr ? TextDirection.ltr : TextDirection.rtl, children: [
               GestureDetector(onTap: () {
-                pageController.animateToPage(3, duration: Durations.medium2, curve: Curves.decelerate);
+                pageController.jumpToPage(3);//, duration: Durations.medium2, curve: Curves.decelerate);
                 setState(() {
                   currentPage = 3;
                 });
@@ -683,7 +669,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
               GestureDetector(
                 onTap: () {
-                  pageController.animateToPage(2, duration: Durations.medium2, curve: Curves.decelerate);
+                  pageController.jumpToPage(2);// duration: Durations.medium2, curve: Curves.decelerate);
                   setState(() {
                     currentPage = 2;
                   });
@@ -711,7 +697,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
               GestureDetector(
                 onTap: () {
-                  pageController.animateToPage(1, duration: Durations.medium2, curve: Curves.decelerate);
+                  pageController.jumpToPage(1);//, duration: Durations.medium2, curve: Curves.decelerate);
                   setState(() {
                     currentPage = 1;
                   });
@@ -719,7 +705,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               ),
 
               GestureDetector(onTap: () {
-                pageController.animateToPage(0, duration: Durations.medium2, curve: Curves.decelerate);
+                pageController.jumpToPage(0);//, duration: Durations.medium2, curve: Curves.decelerate);
                 setState(() {
                   currentPage = 0;
                 });
@@ -752,21 +738,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 }
 
 class UShapeClipper extends CustomClipper<Path> {
+  final zigZagHeight = 10.0;
+  final zigZagWidth = 100.0;
+  final minHeight = 15.0;
+  final maxHeight = 15.0;
   @override
   Path getClip(Size size) {
+/*
     final path = Path();
+    path.moveTo(0, 0);
 
-    // Start at top-left
-    path.lineTo(0, size.height-20);
+    // Top edge
+    path.lineTo(0, size.height - zigZagHeight);
 
-    // Create the "U" with a quadratic bezier
-    path.quadraticBezierTo(
-      size.width / 2, size.height + 20, // control point (deepest part)
-      size.width, size.height - 20,     // end of curve
-    );
+    // ZigZag along the bottom
+    bool isZig = true;
+    for (double x = 0; x < size.width; x += zigZagWidth) {
+      if (isZig) {
+        path.lineTo(x + zigZagWidth / 2, size.height);
+      } else {
+        path.lineTo(x + zigZagWidth / 2, size.height - zigZagHeight);
+      }
+      isZig = !isZig;
+    }
 
-    // Close the shape at the top-right
+    // Right side
     path.lineTo(size.width, 0);
+    path.close();
+
+    return path;
+*/
+    final path = Path();
+    final random = Random();
+
+    path.moveTo(0, 0); // Top-left corner
+    path.lineTo(0, size.height - maxHeight); // Left side
+
+    double x = 0;
+    bool down = true;
+
+    while (x < size.width) {
+      double height = minHeight + random.nextDouble() * (maxHeight - minHeight);
+      double nextX = x + zigZagWidth;
+
+      if (nextX > size.width) nextX = size.width;
+
+      double y = down ? size.height : size.height - height;
+      path.lineTo(x + zigZagWidth / 2, y);
+
+      down = !down;
+      x = nextX;
+    }
+
+    path.lineTo(size.width, 0); // Right side
     path.close();
 
     return path;
