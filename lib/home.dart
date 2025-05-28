@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   UserProfile userProfile = UserProfile();
   bool loading = true;
   final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet(), qrCodeAnimation = AnimationSet();
-
+  final mapAnimation = AnimationSet();
   void setupNotifications() async {
     final notificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -99,12 +99,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   bool connectionError = false;
-
   List<Map<String, dynamic>> bannersAd = [];
   Map<String, dynamic> menuData = {};
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
-  Map<int, GifController> menuLikesGifs = {};
 
   void loadData() async {
     await userProfile.loadFromPref();
@@ -145,13 +143,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
         for(final item in catData) {
           final File saveFile = File('${path.path}/${item['i']}.jgp');
-          // final gifController = new GifController(vsync: this);
-          // if(userProfile.liked.contains(item['id'])) {
-          //   gifController.animateTo(.5);
-          // }
-          menuLikesGifs.addAll({item['id'] : GifController(vsync: this)});
-
-
           if(!(await saveFile.exists())) {
             console.log('[${item['i']}] does not exists, loading image from server ...');
             final Uri imageUrl = Uri(scheme:'https', host: 'www.route-65-dashboard.com', path: '/api/menu/${item['i']}');
@@ -204,6 +195,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     nameAnimation.whenDone(tokensAnimation);
     nameAnimation.start();
 
+    mapAnimation.init(this, .0, 1.0, Durations.long1, Curves.decelerate);
+
     loadData();
   }
 
@@ -226,7 +219,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
       for(int i=0;i<menuData[cat].length;++i) {
         final animation = new AnimationSet();
-        animation.init(this, .0, math.pi, Durations.medium1, Curves.decelerate);
+        animation.init(this, .0, 1.0, Durations.medium1, Curves.decelerate);
         animationsForCat.add(animation);
       }
 
@@ -281,7 +274,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           final isLiked = userProfile.liked.contains(menuItem['id'] as int);
 
           return Transform.translate(
-            offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value)),
+            offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value * math.pi)),
             child: Container(
               margin: EdgeInsets.all(5),
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -319,7 +312,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           right: 10,
                           child: GestureDetector(
                             onTap: () async{
-                              console.log('${menuLikesGifs}');
                               await userProfile.changeLiked(menuItem['id']);
                               setState(() {
 
@@ -372,7 +364,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 onPressed: () async {
                                   Navigator.pushNamed(context, '/meal_view', arguments: {
                                     'data' : menuItem,
-                                    'image_provider' : menuSavedImages[menuItem['i']]
+                                    'image_provider' : menuSavedImages[menuItem['i']],
+                                    'category' : category,
+                                    'cs' : menuData['cs']
                                   });
                                 },
                               ),
@@ -394,9 +388,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   String selectedCategory = 'Chicken';
   bool scanningCode = true;
 
-
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final size = MediaQuery.of(context).size;
     final dic = L10n.of(context)!;
     final cs = Theme.of(context).colorScheme;
@@ -425,7 +419,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 SafeArea(
                   child: SingleChildScrollView(
                     child: Column(children: [
-                      SizedBox(height: (size.height / 2.0) - (size.width / 2.0), width: .0,),
+                      // SizedBox(height: (size.height / 2.0) - (size.width / 2.0), width: .0,),
+                      SizedBox(
+                        height: size.height * .75,
+                      )
                     ],),
                   ),
                 ),
@@ -448,25 +445,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 15),
                             child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              /*Transform.translate(offset:  Offset((1 - nameAnimation.value) * -size.width, 0), child: Opacity(
-                                opacity: nameAnimation.value,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .065,
-                                        overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ),
-
-                                    CircleAvatar(
-                                      radius: 25,
-                                      backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
-                                    )
-                                  ],
-                                ),
-                              ),),*/
-
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -603,23 +581,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ),
 
                         getMenuItemsView(selectedCategory),
-
-                        TextButton(onPressed: () {}, child: Text(dic.show_more, style: TextStyle(color: cs.secondary, fontWeight: FontWeight.bold),)),
-                    /*
-
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          spacing: 15,
-                          children: [
-                            Expanded(child: Divider(color: Colors.grey.shade700,)),
-                            Text(dic.chicken, style: TextStyle(color: Colors.grey.shade700,),),
-                            Expanded(child: Divider(color: Colors.grey.shade700,)),
-                          ],
-                        ),
-
-                        getMenuItemsView('Chicken'),
-
-                    */
 
                         SizedBox(
                           height: 0,

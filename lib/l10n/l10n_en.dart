@@ -99,6 +99,45 @@ class L10nEn extends L10n {
   String get piece => 'piece';
 
   @override
+  String get meal => 'Meal';
+
+  @override
+  String get pnormal => 'Normal fries';
+
+  @override
+  String get pwidges => 'Potato widges';
+
+  @override
+  String get pcurly => 'Curly fries';
+
+  @override
+  String get pa_normal => 'normal patty';
+
+  @override
+  String get pa_special => 'special';
+
+  @override
+  String get pa_smashed => 'smashed';
+
+  @override
+  String get mv_notes => 'Add additional notes ...';
+
+  @override
+  String get mv_post => 'Add menu to cart';
+
+  @override
+  String get b_potbun => 'Potato Bun';
+
+  @override
+  String get b_65 => '65 Bread';
+
+  @override
+  String get b_fit => 'Fit Bread';
+
+  @override
+  String get sandwich => 'Sandwich';
+
+  @override
   String get a3 => '3rd Area';
 
   @override

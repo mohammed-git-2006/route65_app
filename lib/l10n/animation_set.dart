@@ -33,6 +33,10 @@ class AnimationSet {
     }
   }
 
+  void reverse() {
+    controller.reverse();
+  }
+
   void reset() {
     _ran = false;
     controller.reset();

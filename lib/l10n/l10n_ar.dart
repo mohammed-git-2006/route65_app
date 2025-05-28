@@ -99,6 +99,45 @@ class L10nAr extends L10n {
   String get piece => 'قطع';
 
   @override
+  String get meal => 'وجبة';
+
+  @override
+  String get pnormal => 'بطاطا عادي';
+
+  @override
+  String get pwidges => 'بطاطا ويدجيز';
+
+  @override
+  String get pcurly => 'بطاطا كيرلي';
+
+  @override
+  String get pa_normal => 'عادي';
+
+  @override
+  String get pa_special => 'سبيشال';
+
+  @override
+  String get pa_smashed => 'سماشد';
+
+  @override
+  String get mv_notes => 'أضف ملاحظات إضافية ...';
+
+  @override
+  String get mv_post => 'أضف الطّلب';
+
+  @override
+  String get b_potbun => 'خبزة بطاطا';
+
+  @override
+  String get b_65 => 'خبزة 65';
+
+  @override
+  String get b_fit => 'خبزة لياقة';
+
+  @override
+  String get sandwich => 'ساندويش';
+
+  @override
   String get a3 => 'السّكنية الثالثة';
 
   @override

@@ -275,6 +275,84 @@ abstract class L10n {
   /// **'piece'**
   String get piece;
 
+  /// No description provided for @meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal'**
+  String get meal;
+
+  /// No description provided for @pnormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal fries'**
+  String get pnormal;
+
+  /// No description provided for @pwidges.
+  ///
+  /// In en, this message translates to:
+  /// **'Potato widges'**
+  String get pwidges;
+
+  /// No description provided for @pcurly.
+  ///
+  /// In en, this message translates to:
+  /// **'Curly fries'**
+  String get pcurly;
+
+  /// No description provided for @pa_normal.
+  ///
+  /// In en, this message translates to:
+  /// **'normal patty'**
+  String get pa_normal;
+
+  /// No description provided for @pa_special.
+  ///
+  /// In en, this message translates to:
+  /// **'special'**
+  String get pa_special;
+
+  /// No description provided for @pa_smashed.
+  ///
+  /// In en, this message translates to:
+  /// **'smashed'**
+  String get pa_smashed;
+
+  /// No description provided for @mv_notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Add additional notes ...'**
+  String get mv_notes;
+
+  /// No description provided for @mv_post.
+  ///
+  /// In en, this message translates to:
+  /// **'Add menu to cart'**
+  String get mv_post;
+
+  /// No description provided for @b_potbun.
+  ///
+  /// In en, this message translates to:
+  /// **'Potato Bun'**
+  String get b_potbun;
+
+  /// No description provided for @b_65.
+  ///
+  /// In en, this message translates to:
+  /// **'65 Bread'**
+  String get b_65;
+
+  /// No description provided for @b_fit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit Bread'**
+  String get b_fit;
+
+  /// No description provided for @sandwich.
+  ///
+  /// In en, this message translates to:
+  /// **'Sandwich'**
+  String get sandwich;
+
   /// No description provided for @a3.
   ///
   /// In en, this message translates to:

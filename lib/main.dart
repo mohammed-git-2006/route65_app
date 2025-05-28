@@ -36,7 +36,8 @@ class MaterialLauncher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = ColorScheme.light(
-      surface: Color(0xffededfa),
+      // surface: Color(0xffededfa),
+      surface: Colors.white,
 
         // Color(0xfff7f5dc),
       secondary: Color(0xFF0C8A5E),
@@ -119,6 +120,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final loginAnimation = AnimationSet(), titleAnimation = AnimationSet(), googleButtonAnimation = AnimationSet(), facebookButtonAnimation = AnimationSet(),
     dividerAnimation = AnimationSet(), p2Pic = AnimationSet(), p2Name = AnimationSet(), p2Input = AnimationSet(), p4t1 = AnimationSet(), p4t2 = AnimationSet(),
     p3t1 = AnimationSet(), p3t2 = AnimationSet(), p3input = AnimationSet(), p5t1 = AnimationSet(), p5t2 = AnimationSet(), p5dropdown = AnimationSet();
+
   final authEng = AuthEngine();
   final p2NameController = TextEditingController(), p3controller = TextEditingController();
   final p2InputNode = FocusNode();
@@ -338,9 +340,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final size = MediaQuery.of(context).size;
     final dic = L10n.of(context)!;
     return Scaffold(
-      /*appBar: AppBar(
-        title: Text(viewTitle == null? '' : viewTitle!, style: TextStyle(fontWeight: FontWeight.bold),),
-      ),*/
       body: PageView(
         controller: pageController,
         physics: NeverScrollableScrollPhysics(),
@@ -360,11 +359,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        /*Text(
-                          dic.app_name,
-                          style: TextStyle(fontSize: size.width * .08, fontWeight: FontWeight.bold),
-                        ),*/
-
                         Image.asset('assets/route65_logo_bg.png', color: cs.primary, width: size.width * .5,)
                       ],
                     ),
