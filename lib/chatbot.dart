@@ -43,7 +43,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
       drawerEnableOpenDragGesture: true,
       primary: true,
 
-      body: loading ? Center(child: CircularProgressIndicator(),) : Column(
+      body: loading ? Center(child: Lottie.asset('assets/loading.json'),) : Column(
         // spacing: 20,
         children: [
           Expanded(

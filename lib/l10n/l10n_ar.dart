@@ -126,6 +126,21 @@ class L10nAr extends L10n {
   String get mv_post => 'أضف الطّلب';
 
   @override
+  String get your_basket => 'السّلّة';
+
+  @override
+  String get bv_pt => 'نوع الباتي : ';
+
+  @override
+  String get bv_ft => 'نوع البطاطا : ';
+
+  @override
+  String get bv_ot => 'نوع الأوردر : ';
+
+  @override
+  String get bv_bt => 'نوع الخبزة : ';
+
+  @override
   String get b_potbun => 'خبزة بطاطا';
 
   @override
@@ -133,6 +148,9 @@ class L10nAr extends L10n {
 
   @override
   String get b_fit => 'خبزة لياقة';
+
+  @override
+  String get map_t1 => 'أفرع روت 65 في العقبة!';
 
   @override
   String get sandwich => 'ساندويش';

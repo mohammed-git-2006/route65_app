@@ -13,7 +13,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.geo.API_KEY"
-            android:value="457439302188-atspi0pjmanut46a1857ngiaajugdbm1.apps.googleusercontent.com"/>
+            android:value="AIzaSyBrT9mIUBJZu4zE1aMXdj3uy6fWnuDNghI"/>
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="high_importance_channel"/>

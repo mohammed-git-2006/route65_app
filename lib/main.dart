@@ -88,7 +88,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'), // or 'ar'
+      // locale: const Locale('ar'), // or 'ar'
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -289,7 +289,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void googleLoginCallback() async {
     showDialog(context: context, barrierDismissible: false, builder: (context) {
-      return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary,),);
+      return Center(child: Lottie.asset('assets/loading.json'),);
     },);
 
     final result = await authEng.loginGoogle();

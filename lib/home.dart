@@ -13,7 +13,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gif/gif.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lottie/lottie.dart' as lottieLib;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 //import 'package:qr_code_scanner/qr_code_scanner.dart';
@@ -21,11 +23,13 @@ import 'package:route65/auth_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:route65/chatbot.dart';
 import 'package:route65/l10n/l10n.dart';
+import 'package:route65/meal_view.dart';
 import 'package:route65/no_internet.dart';
 import 'dart:math' as math;
 import 'dart:developer' as console;
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/animation_set.dart';
 
@@ -40,7 +44,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   UserProfile userProfile = UserProfile();
   bool loading = true;
   final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet(), qrCodeAnimation = AnimationSet();
-  final mapAnimation = AnimationSet();
+  final mapAnimation = AnimationSet(), basketAnimation = AnimationSet();
   void setupNotifications() async {
     final notificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -103,6 +107,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   Map<String, dynamic> menuData = {};
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
+  List<Map<String, dynamic>> myBasket = [];
 
   void loadData() async {
     await userProfile.loadFromPref();
@@ -196,6 +201,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     nameAnimation.start();
 
     mapAnimation.init(this, .0, 1.0, Durations.long1, Curves.decelerate);
+    basketAnimation.init(this, .0, 1.0, Durations.medium1, Curves.decelerate);
 
     loadData();
   }
@@ -236,6 +242,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     }
   }
 
+  String breadName(L10n dic, BreadType type) {
+    switch(type) {
+      case BreadType.NORMAL:
+        return dic.b_65;
+        case BreadType.POTATO:
+        return dic.b_potbun;
+      case BreadType.FIT:
+        return dic.b_fit;
+    }
+  }
+
+  String pattyName(L10n dic, PattyType type) {
+    switch(type) {
+      case PattyType.NORMAL:
+        return dic.pa_normal;
+      case PattyType.SPECIAL:
+        return dic.pa_special;
+      case PattyType.SMASHED:
+        return dic.pa_smashed;
+    }
+  }
+
   Widget getMenuItemsView(String category) {
     final isAr = Directionality.of(context) == TextDirection.rtl;
     final cs = Theme.of(context).colorScheme;
@@ -252,9 +280,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         modificationMap.add(i);
       }
     }
-
-    print('liked indexes    --> ${userProfile.liked}');
-    print('un added indexes --> $modificationMap');
 
     for (int unAddedIndex in modificationMap) {
       modifiedList.add(menuData[category][unAddedIndex]);
@@ -362,11 +387,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 color: cs.surface,
                                 icon: FaIcon(FontAwesomeIcons.add, size: 15,),
                                 onPressed: () async {
-                                  Navigator.pushNamed(context, '/meal_view', arguments: {
+                                  final pushResult = await Navigator.pushNamed(context, '/meal_view', arguments: {
                                     'data' : menuItem,
                                     'image_provider' : menuSavedImages[menuItem['i']],
                                     'category' : category,
                                     'cs' : menuData['cs']
+                                  }) as Map<String, dynamic>;
+
+
+                                  pushResult.addAll({
+                                    'id' : menuItem['id'],
+                                    'na' : menuItem['na'],
+                                    'ne' : menuItem['ne'],
+                                  });
+
+                                  myBasket.add(pushResult);
+                                  setState(() {});
+
+                                  Future.delayed(Durations.medium3).then((_) {
+                                    basketAnimation.reset();
+                                    basketAnimation.start();
                                   });
                                 },
                               ),
@@ -388,6 +428,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   String selectedCategory = 'Chicken';
   bool scanningCode = true;
 
+  final map65MainBranch = LatLng(29.5218664,34.999778), map65OtherBranch = LatLng(29.5322255,35.0038199);
+
+  get totalBasketPrice {
+    double price = 0;
+    for(final item in myBasket) {
+      price += item['ppi'] * item['q'];
+    }
+
+    return price;
+  }
+
+  get map65MidPoint {
+    return LatLng(
+      (map65MainBranch.latitude  + map65OtherBranch.latitude ) / 2.0,
+      (map65MainBranch.longitude + map65OtherBranch.longitude) / 2.0,
+    );
+  }
+
+  void openLocation(LatLng location) async {
+    final Uri uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}');
+    if (await canLaunchUrl(uri)) launchUrl(uri);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -397,7 +460,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final isAr = Directionality.of(context) == TextDirection.rtl;
 
     return Scaffold(
-      body: loading ? Center(child: CircularProgressIndicator(),) : connectionError ? NoInternetPage(refreshCallback: () {
+      body: loading ? Center(child: lottieLib.Lottie.asset('assets/loading.json'),) : connectionError ? NoInternetPage(refreshCallback: () {
         setState(() {
           loading = true;
           connectionError = false;
@@ -417,14 +480,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               controller: pageController,
               children: [
                 SafeArea(
-                  child: SingleChildScrollView(
-                    child: Column(children: [
-                      // SizedBox(height: (size.height / 2.0) - (size.width / 2.0), width: .0,),
-                      SizedBox(
-                        height: size.height * .75,
-                      )
-                    ],),
-                  ),
+                  child: Column(children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: Text(dic.map_t1, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .065),),
+                    ),
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: cs.secondary.withAlpha(50), width: 4),
+                          borderRadius: BorderRadius.circular(30)
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(25),
+                          child: GoogleMap(
+                            style: 'hyperspace',
+                            initialCameraPosition: CameraPosition(target: map65MidPoint, zoom: 15),
+                            markers: {
+                              Marker(position: map65MainBranch, markerId: MarkerId('main_branch'), onTap: () => openLocation(map65MainBranch)),
+                              Marker(position: map65OtherBranch, markerId: MarkerId('2nd_branch'), onTap: () => openLocation(map65OtherBranch)),
+                            },
+                          )
+                        )
+                      ),
+                    )
+                  ],),
                 ),
 
                 SingleChildScrollView(
@@ -603,9 +684,72 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 ),
 
 
-                Column(children: [
-                  Text('Your basket here')
-                ],),
+                // PAGE-BASKET
+                SafeArea(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SizedBox(height: 8,),
+                    Padding(
+                      padding: const EdgeInsets.all(15.0).copyWith(top: 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${dic.your_basket}', style: TextStyle(fontSize: size.width * .055)),
+                          Text('${totalBasketPrice} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),)
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 15,),
+
+                    Expanded(child: SingleChildScrollView(child: Column(
+                      spacing: 20,
+                      children: [
+                        ...(myBasket.map((basketItem) {
+                          return Container(
+                            margin: EdgeInsets.symmetric(horizontal: 15),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300, width: 1),
+                              borderRadius: BorderRadius.circular(15),
+                              color: cs.surface
+                            ),
+
+                            padding: EdgeInsets.all(10),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Padding(padding: EdgeInsets.all(5), child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      spacing: 5,
+                                      children: [
+                                        Text('${basketItem[isAr ? 'na' : 'ne']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, overflow: TextOverflow.ellipsis),),
+                                        Text('x${basketItem['q']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color:cs.secondary),
+                                            textDirection: Directionality.of(context) == TextDirection.rtl ? TextDirection.ltr : TextDirection.rtl,),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.close, size: 20,)
+                                ],
+                              ),),
+
+                              Divider(color: Colors.grey.shade400,),
+                              Row(
+                                children: [
+                                  Text('${basketItem['ppi']} x ${basketItem['q']} = ${basketItem['ppi'] * basketItem['q']} JD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color: cs.secondary),
+                                    textDirection: TextDirection.ltr,),
+                                ],
+                              ),
+
+                              SizedBox(height: 10,),
+
+                              if (basketItem['bt'] != null) Text('${dic.bv_bt}\t${breadName(dic, basketItem['bt'])}'),
+                              if (basketItem['pt'] != null) Text('${dic.bv_pt}\t${pattyName(dic, basketItem['pt'])}'),
+                            ],),
+                          );
+                        }).toList())
+                      ],
+                    ),))
+                  ],),
+                ),
 
                 ChatBotPage()
               ],
@@ -613,16 +757,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           ),
 
           Container(
-            decoration: BoxDecoration(
-                color: cs.secondary.withAlpha(50),
-              boxShadow: [
-                // BoxShadow(color: Colors.grey.shade500, blurRadius: 10, spreadRadius: 5)
-              ]
-            ),
+            color: cs.secondary.withAlpha(50),
             height: 70,
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, textDirection: isAr ? TextDirection.ltr : TextDirection.rtl, children: [
               GestureDetector(onTap: () {
-                pageController.jumpToPage(3);//, duration: Durations.medium2, curve: Curves.decelerate);
+                pageController.jumpToPage(3);
                 setState(() {
                   currentPage = 3;
                 });
@@ -630,7 +769,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
               GestureDetector(
                 onTap: () {
-                  pageController.jumpToPage(2);// duration: Durations.medium2, curve: Curves.decelerate);
+                  pageController.jumpToPage(2);
                   setState(() {
                     currentPage = 2;
                   });
@@ -639,17 +778,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   children: [
                     Positioned.fill(child: FaIcon(FontAwesomeIcons.basketShopping, color: currentPage == 2 ? cs.secondary : cs.primary,size: 25,)),
                     Positioned(top: 0, right: 0, child: Transform.translate(
-                      offset: Offset(15, -15),
+                      offset: Offset(15, -15 + (math.sin(basketAnimation.value * math.pi) * -10)),
                       child: Container(
                         decoration: BoxDecoration(
                             color: cs.secondary,
                             borderRadius: BorderRadius.circular(45)
                         ),
-
                         width: 20,
                         height: 20,
-
-                        child: Center(child: Text('0', style: TextStyle(color: Colors.white),)),
+                        child: Center(child: Text('${myBasket.length}', style: TextStyle(color: Colors.white),)),
                       ),
                     ),)
                   ],
@@ -675,10 +812,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
 
               GestureDetector(onTap: () {
-                /*pageController.animateToPage(0, duration: Durations.medium2, curve: Curves.decelerate);
-                setState(() {
-                  currentPage = 0;
-                });*/
+
               },child: FaIcon(FontAwesomeIcons.qrcode, /*color: currentPage == 0 ? cs.secondary : cs.primary,*/)),
             ],),
           )
@@ -700,12 +834,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
 class UShapeClipper extends CustomClipper<Path> {
   final zigZagHeight = 10.0;
-  final zigZagWidth = 100.0;
+  final zigZagWidth = 50.0;
   final minHeight = 15.0;
-  final maxHeight = 15.0;
+  final maxHeight = 20.0;
   @override
   Path getClip(Size size) {
-/*
+    /*
     final path = Path();
     path.moveTo(0, 0);
 

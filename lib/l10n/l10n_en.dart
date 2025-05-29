@@ -123,7 +123,22 @@ class L10nEn extends L10n {
   String get mv_notes => 'Add additional notes ...';
 
   @override
-  String get mv_post => 'Add menu to cart';
+  String get mv_post => 'Add item to cart';
+
+  @override
+  String get your_basket => 'Your Basket';
+
+  @override
+  String get bv_pt => 'patty type : ';
+
+  @override
+  String get bv_ft => 'fries type : ';
+
+  @override
+  String get bv_ot => 'order type : ';
+
+  @override
+  String get bv_bt => 'bread type : ';
 
   @override
   String get b_potbun => 'Potato Bun';
@@ -133,6 +148,9 @@ class L10nEn extends L10n {
 
   @override
   String get b_fit => 'Fit Bread';
+
+  @override
+  String get map_t1 => 'Here are our branches in Aqaba!';
 
   @override
   String get sandwich => 'Sandwich';

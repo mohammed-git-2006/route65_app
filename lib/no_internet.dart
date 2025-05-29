@@ -17,7 +17,7 @@ class NoInternetPage extends StatelessWidget {
           spacing: 15,
           children: [
             SizedBox(height: MediaQuery.of(context).size.height * .3, child: Lottie.asset('assets/no_internet_animation.json')),
-            Text(L10n.of(context)!.no_internet, style: TextStyle(color: Colors.grey.shade800, fontSize: MediaQuery.of(context).size.width * .055)),
+            Center(child: Text(L10n.of(context)!.no_internet, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade800, fontSize: MediaQuery.of(context).size.width * .055))),
             ElevatedButton(
               onPressed: refreshCallback,
               child:Text(L10n.of(context)!.try_again),

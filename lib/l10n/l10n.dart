@@ -326,8 +326,38 @@ abstract class L10n {
   /// No description provided for @mv_post.
   ///
   /// In en, this message translates to:
-  /// **'Add menu to cart'**
+  /// **'Add item to cart'**
   String get mv_post;
+
+  /// No description provided for @your_basket.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Basket'**
+  String get your_basket;
+
+  /// No description provided for @bv_pt.
+  ///
+  /// In en, this message translates to:
+  /// **'patty type : '**
+  String get bv_pt;
+
+  /// No description provided for @bv_ft.
+  ///
+  /// In en, this message translates to:
+  /// **'fries type : '**
+  String get bv_ft;
+
+  /// No description provided for @bv_ot.
+  ///
+  /// In en, this message translates to:
+  /// **'order type : '**
+  String get bv_ot;
+
+  /// No description provided for @bv_bt.
+  ///
+  /// In en, this message translates to:
+  /// **'bread type : '**
+  String get bv_bt;
 
   /// No description provided for @b_potbun.
   ///
@@ -346,6 +376,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Fit Bread'**
   String get b_fit;
+
+  /// No description provided for @map_t1.
+  ///
+  /// In en, this message translates to:
+  /// **'Here are our branches in Aqaba!'**
+  String get map_t1;
 
   /// No description provided for @sandwich.
   ///

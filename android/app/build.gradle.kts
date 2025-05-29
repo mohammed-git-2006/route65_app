@@ -6,6 +6,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 
 }
 
@@ -18,6 +19,7 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("com.google.firebase:firebase-messaging:23.4.1")
+
 }
 
 android {
