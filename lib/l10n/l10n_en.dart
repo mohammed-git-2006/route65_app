@@ -141,6 +141,9 @@ class L10nEn extends L10n {
   String get bv_bt => 'bread type : ';
 
   @override
+  String get gram => 'gram';
+
+  @override
   String get b_potbun => 'Potato Bun';
 
   @override
@@ -148,6 +151,9 @@ class L10nEn extends L10n {
 
   @override
   String get b_fit => 'Fit Bread';
+
+  @override
+  String get basket_empty => 'Your basket is empty !';
 
   @override
   String get map_t1 => 'Here are our branches in Aqaba!';

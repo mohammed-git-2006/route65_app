@@ -103,6 +103,7 @@ flutter:
     - assets/no_internet_animation.json
     - assets/loading.json
     - assets/robot_animation.json
+    - assets/empty_basket.json
     - assets/heart.gif
     - assets/heart_filled.png
     - assets/heart_unfilled.png

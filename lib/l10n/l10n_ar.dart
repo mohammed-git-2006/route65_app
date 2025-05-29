@@ -141,6 +141,9 @@ class L10nAr extends L10n {
   String get bv_bt => 'نوع الخبزة : ';
 
   @override
+  String get gram => 'غرام';
+
+  @override
   String get b_potbun => 'خبزة بطاطا';
 
   @override
@@ -148,6 +151,9 @@ class L10nAr extends L10n {
 
   @override
   String get b_fit => 'خبزة لياقة';
+
+  @override
+  String get basket_empty => 'سلتك فاضية!';
 
   @override
   String get map_t1 => 'أفرع روت 65 في العقبة!';

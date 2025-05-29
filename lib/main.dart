@@ -88,7 +88,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      // locale: const Locale('ar'), // or 'ar'
+      locale: const Locale('ar'), // or 'ar'
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),

@@ -359,6 +359,12 @@ abstract class L10n {
   /// **'bread type : '**
   String get bv_bt;
 
+  /// No description provided for @gram.
+  ///
+  /// In en, this message translates to:
+  /// **'gram'**
+  String get gram;
+
   /// No description provided for @b_potbun.
   ///
   /// In en, this message translates to:
@@ -376,6 +382,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Fit Bread'**
   String get b_fit;
+
+  /// No description provided for @basket_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your basket is empty !'**
+  String get basket_empty;
 
   /// No description provided for @map_t1.
   ///

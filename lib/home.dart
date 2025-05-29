@@ -10,15 +10,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-//import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gif/gif.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart' as lottieLib;
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
-//import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:route65/auth_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:route65/chatbot.dart';
@@ -27,10 +23,8 @@ import 'package:route65/meal_view.dart';
 import 'package:route65/no_internet.dart';
 import 'dart:math' as math;
 import 'dart:developer' as console;
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import 'l10n/animation_set.dart';
 
 class HomePage extends StatefulWidget {
@@ -264,6 +258,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     }
   }
 
+  String friesName(L10n dic, FriesTypes type) {
+    switch(type) {
+      case FriesTypes.CURLY:
+        return dic.pcurly;
+      case FriesTypes.NORMAL:
+        return dic.pnormal;
+      case FriesTypes.WEDGES:
+        return dic.pwidges;
+      case FriesTypes.NONE:
+        return '';
+    }
+  }
+
   Widget getMenuItemsView(String category) {
     final isAr = Directionality.of(context) == TextDirection.rtl;
     final cs = Theme.of(context).colorScheme;
@@ -394,11 +401,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     'cs' : menuData['cs']
                                   }) as Map<String, dynamic>;
 
+                                  if (pushResult.containsKey('ordered')) {
+                                    return;
+                                  }
+
 
                                   pushResult.addAll({
                                     'id' : menuItem['id'],
                                     'na' : menuItem['na'],
                                     'ne' : menuItem['ne'],
+                                    'cat' : category
                                   });
 
                                   myBasket.add(pushResult);
@@ -460,7 +472,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final isAr = Directionality.of(context) == TextDirection.rtl;
 
     return Scaffold(
-      body: loading ? Center(child: lottieLib.Lottie.asset('assets/loading.json'),) : connectionError ? NoInternetPage(refreshCallback: () {
+      body: loading ? Center(child: SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/loading.json')),) : connectionError ? NoInternetPage(refreshCallback: () {
         setState(() {
           loading = true;
           connectionError = false;
@@ -685,7 +697,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
 
                 // PAGE-BASKET
-                SafeArea(
+                Container(
+                  margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     SizedBox(height: 8,),
                     Padding(
@@ -700,7 +713,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     ),
                     SizedBox(height: 15,),
 
-                    Expanded(child: SingleChildScrollView(child: Column(
+                    myBasket.isEmpty ? Expanded(child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          lottieLib.Lottie.asset('assets/empty_basket.json'),
+
+                          Text(dic.basket_empty),
+                        ],
+                      )
+                    ),) : Expanded(child: SingleChildScrollView(child: Column(
                       spacing: 20,
                       children: [
                         ...(myBasket.map((basketItem) {
@@ -727,7 +749,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                       ],
                                     ),
                                   ),
-                                  Icon(Icons.close, size: 20,)
+                                  GestureDetector(child: Icon(Icons.close, size: 20,), onTap: () {
+                                    setState(() {
+                                      myBasket.remove(basketItem);
+                                    });
+                                  },)
                                 ],
                               ),),
 
@@ -743,11 +769,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                               if (basketItem['bt'] != null) Text('${dic.bv_bt}\t${breadName(dic, basketItem['bt'])}'),
                               if (basketItem['pt'] != null) Text('${dic.bv_pt}\t${pattyName(dic, basketItem['pt'])}'),
+                              if (basketItem['ft'] != null) Text('${dic.bv_ft}\t${friesName(dic, basketItem['ft'])}'),
+                              if (basketItem['g']  != null) Text('${basketItem['g']} ${dic.gram} '),
+                              if (basketItem['cat'] == 'Appetizers') Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}',
+                                    textDirection: TextDirection.ltr,)
+
                             ],),
                           );
-                        }).toList())
+                        }).toList()),
                       ],
-                    ),))
+                    ),)),
+
+
+                    // ElevatedButton(onPressed: () {}, child: Text('hello'))
                   ],),
                 ),
 

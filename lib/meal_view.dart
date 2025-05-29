@@ -154,7 +154,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                         ),
 
                         Positioned(top: 10 + MediaQuery.of(context).padding.top, right: 10, child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => Navigator.of(context).pop({'ordered' : false}),
                           child: Container(
                             decoration: BoxDecoration(
                               color: cs.surface,
@@ -504,17 +504,6 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
 
                               GestureDetector(
                                 onTap: () => setState(() {
-                                  /*if (friesType == FriesTypes.CURLY) {
-                                    isWedges.controller.reverse();
-                                    isNormalFries.controller.reverse();
-                                    // isCurly.controller.reverse();
-                                  } else {
-                                    isCurly.reset();
-                                  }
-
-                                  isCurly.start();
-
-                                  friesType = FriesTypes.CURLY;*/
                                   if (friesType == FriesTypes.CURLY) {
                                     isWedges.controller.reverse();
                                     isCurly.controller.reverse();
@@ -685,6 +674,13 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ],
                   ),),
 
+                  Row(
+                    children: [
+                      SizedBox(width: 20,),
+                      Text('${menuItem['q']} ${dic.piece}', style: TextStyle(fontSize: size.width * .045, fontWeight: FontWeight.bold), textAlign: TextAlign.start,),
+                    ],
+                  ),
+
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 15),
                     decoration: optionsDecoration.copyWith(color: cs.surface),
@@ -725,7 +721,8 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                       'pt' : cat != 'Hotdog' && cat != 'Appetizers' ? pattyType : null,
                       'ft' : isMeal ? friesType : null,
                       'an' : notesController.text,
-                      'g' : grams,
+                      'g' : cat != 'Hotdog' && cat != 'Appetizers' ? grams : null,
+                      'apq' : cat == 'Appetizers' ? menuItem['q'] : null,
                     });
                   },
                   child: Container(
