@@ -64,7 +64,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     await userProfile.updateFCM(fcm);
 
     FirebaseMessaging.onMessage.listen((event) {
-      console.log('got notification --> ${event.notification!.title}');
       AuthEngine.showLocalNotification(event);
     },);
   }
@@ -77,7 +76,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         'username' : userProfile.name
       });
       final response = await http.get(url);
-      print('--> response from server --> ${response.body}');
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (data.containsKey(('registered'))) {
@@ -91,7 +89,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       userProfile.update(tokens: data['points'] * 1.0);
       return true;
     } catch (err) {
-      print('### loadTokensFromServer error --> $err}');
       return false;
     }
   }
@@ -124,12 +121,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final Uri catsUrl = Uri(scheme: 'https', host: 'www.route-65-dashboard.com', path: '/api/cats');
       final catsResponse = await http.get(catsUrl);
       final catsDecoded = jsonDecode(catsResponse.body);
-      console.log('got cats from server, transforming ...');
-      console.log('${jsonDecode(catsResponse.body).length}');
       List.generate(catsDecoded.length, (i) => menuCats.add(catsDecoded[i]));
       loadAllAnimationsForMenuItems();
     } catch (err) {
-      console.log('banner data error --> ${err}');
+      console.log('[Connection check][1] $err');
       connectionError = true;
     }
 
@@ -143,7 +138,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         for(final item in catData) {
           final File saveFile = File('${path.path}/${item['i']}.jgp');
           if(!(await saveFile.exists())) {
-            console.log('[${item['i']}] does not exists, loading image from server ...');
             final Uri imageUrl = Uri(scheme:'https', host: 'www.route-65-dashboard.com', path: '/api/menu/${item['i']}');
             final imageResponse = await http.get(imageUrl);
             await saveFile.writeAsBytes(imageResponse.bodyBytes);
@@ -163,13 +157,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
         menuSavedImages.addAll({'${bannerData['id']}' : FileImage(bannerImageFile)});
       }
+
+      File languageFile = File('${path.path}/language.config');
+      await languageFile.writeAsString(Localizations.localeOf(context).languageCode);
     } on Exception catch (e) {
+      console.log('error $e');
       setState(() {
         loading = false;
         connectionError = true;
       });
-
-      startAnimationsTrailFor('Chicken');
 
       return;
     }
@@ -215,7 +211,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   void loadAllAnimationsForMenuItems() {
     for(String cat in menuCats) {
       List<AnimationSet> animationsForCat = [];
-      // console.log('getting animations for ${cat}');
 
       for(int i=0;i<menuData[cat].length;++i) {
         final animation = new AnimationSet();
@@ -378,7 +373,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                       Text('${category != 'Appetizers' ? menuItem['c'].map((c) {
                         return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
-                      }) : (menuItem['id'] == 18 ? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
+                      }) : (menuItem['q'] == 1? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
 
                       Row(
                         spacing: 5,
@@ -404,7 +399,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   if (pushResult.containsKey('ordered')) {
                                     return;
                                   }
-
 
                                   pushResult.addAll({
                                     'id' : menuItem['id'],
@@ -442,7 +436,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
   final map65MainBranch = LatLng(29.5218664,34.999778), map65OtherBranch = LatLng(29.5322255,35.0038199);
 
-  get totalBasketPrice {
+  double get totalBasketPrice {
     double price = 0;
     for(final item in myBasket) {
       price += item['ppi'] * item['q'];
@@ -459,7 +453,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   void openLocation(LatLng location) async {
-    final Uri uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}');
+    Uri uri = Uri.parse('https://maps.app.goo.gl/5TXstuZonzbguVVA7');
+    if (location == map65MainBranch) {
+      uri = Uri.parse('https://maps.app.goo.gl/NMEJK6Q8GjzZHSex7');
+    }
+
     if (await canLaunchUrl(uri)) launchUrl(uri);
   }
 
@@ -523,7 +521,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 SingleChildScrollView(
                   child: Column(children: [
                     ClipPath(
-                      clipper: UShapeClipper(),
+                      // clipper: UShapeClipper(),
                       child: Container(
                         // height: size.height * .5,
                         width: size.width,
@@ -680,7 +678,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           child: ElevatedButton(child: Text('Reset'), onPressed: () async {
                             await GoogleSignIn().signOut();
                             // await FirebaseAuth.instance.signOut();
-                            console.log(' --> ${FirebaseAuth.instance.currentUser == null}');
                             final pref = await SharedPreferences.getInstance();
                             pref.clear();
                             nameAnimation.dispose();
@@ -707,7 +704,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('${dic.your_basket}', style: TextStyle(fontSize: size.width * .055)),
-                          Text('${totalBasketPrice} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),)
+                          Text('${totalBasketPrice.toStringAsFixed(2)} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),)
                         ],
                       ),
                     ),
@@ -716,9 +713,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     myBasket.isEmpty ? Expanded(child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        spacing: 10,
                         children: [
-                          lottieLib.Lottie.asset('assets/empty_basket.json'),
-
+                          SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/empty_basket.json')),
                           Text(dic.basket_empty),
                         ],
                       )
@@ -760,7 +757,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               Divider(color: Colors.grey.shade400,),
                               Row(
                                 children: [
-                                  Text('${basketItem['ppi']} x ${basketItem['q']} = ${basketItem['ppi'] * basketItem['q']} JD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color: cs.secondary),
+                                  Text('${basketItem['ppi']} x ${basketItem['q']} = ${(basketItem['ppi'] * basketItem['q']).toStringAsFixed(2)} JD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color: cs.secondary),
                                     textDirection: TextDirection.ltr,),
                                 ],
                               ),
@@ -771,17 +768,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               if (basketItem['pt'] != null) Text('${dic.bv_pt}\t${pattyName(dic, basketItem['pt'])}'),
                               if (basketItem['ft'] != null) Text('${dic.bv_ft}\t${friesName(dic, basketItem['ft'])}'),
                               if (basketItem['g']  != null) Text('${basketItem['g']} ${dic.gram} '),
-                              if (basketItem['cat'] == 'Appetizers') Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}',
+                              if (basketItem['cat'] == 'Appetizers' && basketItem['q'] != 1) Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}',
                                     textDirection: TextDirection.ltr,)
 
                             ],),
                           );
                         }).toList()),
+
                       ],
                     ),)),
-
-
-                    // ElevatedButton(onPressed: () {}, child: Text('hello'))
                   ],),
                 ),
 

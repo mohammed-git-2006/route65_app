@@ -96,7 +96,13 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
     }
 
     if (cat == 'Chicken') {
-      price += (pattyType == PattyType.SPECIAL ? .5 : 0) + (((grams / 130) - 1) * (pattyType == PattyType.NORMAL ? 2.5 : 3.0));
+      final extraPatties = (grams - minGrams) / 130;
+      if (pattyType == PattyType.SPECIAL) {
+        price += .5;
+        price += (extraPatties * 3.0);
+      } else {
+        price += extraPatties * 2.5;
+      }
     } else {
       price += ((grams  - minGrams) / 50.0);
     }
@@ -173,12 +179,12 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: Text(itemName, style: TextStyle(fontSize: size.width * .065, fontWeight: FontWeight.bold),)),
-                      Text('${(price * orderQ).toStringAsPrecision(2)} JD', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
+                      Text('${(price * orderQ).toStringAsFixed(2)} JD', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
                         textDirection: isAr ? TextDirection.ltr : TextDirection.rtl,),
                     ],
                   ),),
 
-                  if (!isAppetizer) Padding(padding: EdgeInsets.symmetric(horizontal: 0.0), child: Wrap(
+                  if (!isAppetizer) Padding(padding: EdgeInsets.symmetric(horizontal: 10.0), child: Wrap(
                     runSpacing: 10,
                     spacing: 15,
                     children: List.generate(menuItem['c'].length, (i) {
@@ -458,7 +464,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
 
                               GestureDetector(
                                 onTap: () => setState(() {
-                                  print('--> original type was ${friesType}');
+
                                   if (friesType == FriesTypes.NORMAL) {
                                     isWedges.controller.reverse();
                                     isCurly.controller.reverse();
@@ -625,15 +631,39 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                       ), menuStyle: MenuStyle(
                         backgroundColor: MaterialStateProperty.resolveWith((states) => (cs.secondary)),
                       ),),
+
                       SizedBox(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                          decoration: BoxDecoration(
+                              color: cs.surface,
+                              border: Border.all(color: Colors.grey.shade300, width: 2),
+                              borderRadius: BorderRadius.circular(45)
+                          ),
+                          child: Row(spacing: 15, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                            // Text('+', style: TextStyle(color: cs.secondary, fontWeight: FontWeight.bold, fontSize: size.width * .05),),
+                            GestureDetector(child: Icon(Icons.add, color: cs.secondary), onTap: () {
+                              setState(() {
+                                grams += incrementalUnit;
+                              });
+                            },),
+                            Text('$grams', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .04),),
+                            GestureDetector(child: Icon(Icons.remove, color: grams == minGrams ? Colors.grey.shade300 : cs.secondary), onTap: () {
+                              setState(() {
+                                grams -= incrementalUnit;
+                              });
+                            }),
+                          ],),
+                        ),
+                      ),
+
+                      /*SizedBox(
                         height: 40,
                         child: Row(textDirection: TextDirection.ltr, children: [
                           GestureDetector(
                             onTap: () {
                               if (grams != minGrams) {
-                                setState(() {
-                                  grams -= incrementalUnit;
-                                });
+
                               }
                             },
                             child: Container(padding: EdgeInsets.symmetric(horizontal: 15),
@@ -670,11 +700,11 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                             ),
                           ),
                         ],),
-                      )
+                      )*/
                     ],
                   ),),
 
-                  Row(
+                  if (cat == 'Appetizers' && menuItem['q'] != 1) Row(
                     children: [
                       SizedBox(width: 20,),
                       Text('${menuItem['q']} ${dic.piece}', style: TextStyle(fontSize: size.width * .045, fontWeight: FontWeight.bold), textAlign: TextAlign.start,),
@@ -702,7 +732,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
           ),
 
           Container(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 5, top: 15, left: 20, right: 20),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 15, top: 15, left: 20, right: 20),
             decoration: BoxDecoration(
               color: cs.surface,
               boxShadow: [
@@ -719,7 +749,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                       'ppi' : price,
                       'bt' : cat != 'Hotdog' && cat != 'Appetizers' ? breadType : null,
                       'pt' : cat != 'Hotdog' && cat != 'Appetizers' ? pattyType : null,
-                      'ft' : isMeal ? friesType : null,
+                      'ft' : isMeal && cat != 'Appetizers'? friesType : null,
                       'an' : notesController.text,
                       'g' : cat != 'Hotdog' && cat != 'Appetizers' ? grams : null,
                       'apq' : cat == 'Appetizers' ? menuItem['q'] : null,
@@ -773,5 +803,21 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    is65Bun.dispose();
+    isFitBun.dispose();
+    isPotatoBun.dispose();
+    isNormalFries.dispose();
+    isCurly.dispose();
+    isWedges.dispose();
+    friesOptionsAnimation.dispose();
+    isMealAnimation.dispose();
+    isSandwichAnimation.dispose();
+    r2Animation.dispose();
+    r3Animation.dispose();
   }
 }

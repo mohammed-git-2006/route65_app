@@ -44,7 +44,6 @@ class AnimationSet {
 
   void whenDone(AnimationSet other) {
     controller.addStatusListener((status) {
-      print('${status}');
       if (status.isCompleted) other.start();
     });
   }

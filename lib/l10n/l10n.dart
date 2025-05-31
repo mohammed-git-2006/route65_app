@@ -284,19 +284,19 @@ abstract class L10n {
   /// No description provided for @pnormal.
   ///
   /// In en, this message translates to:
-  /// **'Normal fries'**
+  /// **'normal fries'**
   String get pnormal;
 
   /// No description provided for @pwidges.
   ///
   /// In en, this message translates to:
-  /// **'Potato widges'**
+  /// **'potato widges'**
   String get pwidges;
 
   /// No description provided for @pcurly.
   ///
   /// In en, this message translates to:
-  /// **'Curly fries'**
+  /// **'curly fries'**
   String get pcurly;
 
   /// No description provided for @pa_normal.

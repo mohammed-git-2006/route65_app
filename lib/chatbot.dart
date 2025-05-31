@@ -208,18 +208,15 @@ class _ChatBotPageState extends State<ChatBotPage> {
       });
     });
     try {
-      print('--> openai conversation length ==> ${openai.conversation.length}');
-      if (openai.conversation.length > 2)
+      if (openai.conversation.length > 2) {
         await scrollController.animateTo(scrollController.position.maxScrollExtent + MediaQuery.of(context).size.height / 2.0, duration: Durations.medium1, curve: Curves.easeIn,);
+      }
     } on Exception catch (e) {
       // TODO
     }
-    // scrollController.jumpTo(scrollController.position.maxScrollExtent);
+
     final message = await openai.sendMessage(messageContent, userProfile.uid!);
-    print('status ==> ${message.status}');
     if(message.status == OpenAIStatus.SUCCESFULL) {
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('OpenAI API message :\n${message.content}'),));
-      print(message.content);
       final response = jsonDecode(message.content) as Map<String, dynamic>;
       if (response['error']) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('OpenAI API message :\n${message.content}'),));
@@ -236,7 +233,6 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
       scrollController.animateTo(scrollController.position.maxScrollExtent  + MediaQuery.of(context).size.height / 2.0, duration: Durations.medium1, curve: Curves.easeIn,);
     } else {
-      print('err  --->  ${message.content}');
       setState(() {
         openai.conversation.removeAt(openai.conversation.length-1);
         result = message.content;

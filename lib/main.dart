@@ -88,7 +88,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'), // or 'ar'
+      // locale: const Locale('ar'), // or 'ar'
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -196,7 +196,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final newController = new TextEditingController();
       newController.addListener(() {
         final regexPattern = RegExp(r'^\d$');
-        console.log('${regexPattern.hasMatch(newController.text)}');
         if (!regexPattern.hasMatch(newController.text)) {
           newController.text = '';
         }
@@ -218,8 +217,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         authCodeComplete = !spaceFound;
 
         if (authCodeComplete) setState(() {});
-
-        print('${authCode} --> $authCodeComplete');
       });
 
       _phoneControllers.add(newController);
@@ -301,8 +298,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         Navigator.popAndPushNamed(context, '/home');
         break;
       case CheckResult.FIRST_TIME:
-        console.log('first time !!!');
-        console.log('name ==> ${authEng.userProfile.name} || pic ==> ${authEng.userProfile.pic}');
         setState(() {
           p2NameController.text = authEng.userProfile.name ?? '';
           p2NameHolder = p2NameController.text;
@@ -322,9 +317,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   void facebookLoginCallback() async {
-    // console.log('before updating : ${authEng.userProfile.toJsonPref()}');
-    // authEng.userProfile.update(phone: '+962797056032', location: '');
-    // console.log('after updating  : ${authEng.userProfile.toJsonPref()}');
     final result = await authEng.loginFacebook();
   }
 
@@ -370,17 +362,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 spacing: 15,
                 children: [
                   Opacity(opacity: loginAnimation.value, child: Text(dic.login, style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .06),)),
-                  ElevatedButton(child: Text('Admin'), onPressed: () async {
-                    phoneComplete = true;
-                    p3controller.text = '97056032';
-                    authCode = ['1', '2', '3', '4', '5', '6'];
-                    for(int i=0;i<4;++i) {
-                      p5t1.start();
-                      await pageController.nextPage(duration: Durations.medium2, curve: Curves.easeIn);
-                    }
-
-                    // p5t1.start();
-                  },),
                   Opacity(opacity: dividerAnimation.value, child: Divider()),
                   Opacity(
                     opacity: googleButtonAnimation.value,
@@ -568,8 +549,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         phoneComplete = false;
                       });
 
-                      console.log('verifying phone number +9627${p3controller.text}');
-
                       FirebaseAuth.instance.verifyPhoneNumber(
                         verificationCompleted: (phoneAuthCredential) {
 
@@ -659,6 +638,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                               padding: EdgeInsets.all(5),
                               child: TextField(
+                                // keyboardType: TextInputType.number,
                                 decoration: InputDecoration(fillColor: Colors.grey.shade50, contentPadding: EdgeInsets.zero, counterText: ''),
                                 style: TextStyle(color: Colors.black),
                                 textAlign: TextAlign.center,
@@ -720,12 +700,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         pageController.nextPage(duration: Durations.medium2, curve: Curves.easeInBack);
                         p5t1.start();
                       } catch(err) {
-                        // if(err.toString().split(' ')[0].trim() == '[firebase_auth/provider-already-linked]') {
-                        //   pageController.nextPage(duration: Durations.medium2, curve: Curves.easeInBack);
-                        //   return;
-                        // }
-
-                        console.log(' -- ${err.toString()}');
 
                         getBottomSheet([
                           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
@@ -773,8 +747,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   });
                 }, value: selectedArea, decoration: InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10)),),
               ),
-
-              ElevatedButton(
+              /*ElevatedButton(
                 child: Text('change'),
                 onPressed: () {
                   setState(() {
@@ -782,7 +755,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     selectedArea = 'hello';
                   });
                 },
-              )
+              )*/
             ],),),
 
             Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05, child: ElevatedButton(

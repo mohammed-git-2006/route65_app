@@ -102,13 +102,13 @@ class L10nEn extends L10n {
   String get meal => 'Meal';
 
   @override
-  String get pnormal => 'Normal fries';
+  String get pnormal => 'normal fries';
 
   @override
-  String get pwidges => 'Potato widges';
+  String get pwidges => 'potato widges';
 
   @override
-  String get pcurly => 'Curly fries';
+  String get pcurly => 'curly fries';
 
   @override
   String get pa_normal => 'normal patty';

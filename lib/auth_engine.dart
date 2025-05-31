@@ -2,6 +2,7 @@
 
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +11,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'dart:developer' as console;
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,7 +56,6 @@ class UserProfile {
     completed = data['comp'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
     for(final item in likedPlaceholder) liked.add(int.parse('$item'));
-    console.log('${likedPlaceholder} --> ${liked}');
     if(pref != null && pref) uid = data['uid'];
   }
 
@@ -132,7 +134,6 @@ class AuthEngine {
 
   Future<AuthResult> checkLogin() async {
     try {
-      console.log('is null ? ${instance.currentUser == null}');
       if (instance.currentUser == null) {
         return AuthResult(CheckResult.ERROR, 'CURRENT USER NULL');
       }
@@ -158,7 +159,6 @@ class AuthEngine {
       if (response.status == LoginStatus.success) {
         final accessToken = response.accessToken;
         final userData = await FacebookAuth.instance.getUserData();
-        print(userData);
       }
 
       // return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '');
@@ -170,7 +170,6 @@ class AuthEngine {
 
   Future<AuthResult> loginGoogle() async {
     try {
-      console.log('hello');
       final googleSignIn = GoogleSignIn();
       final signInResult = await googleSignIn.signIn();
       final auth = await signInResult!.authentication;
@@ -185,36 +184,75 @@ class AuthEngine {
         return AuthResult(CheckResult.FIRST_TIME, '');
       }
 
-      console.log('checked cloud exists!');
-
       await userProfile.fromCloud();
-
-      console.log('user profile updated from instance');
       return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '$signInResult');
     } catch(err) {
-      console.log('got error ==> $err', level: 2);
       return AuthResult(CheckResult.ERROR, '$err');
     }
   }
 
 
-  static void showLocalNotification(RemoteMessage message) {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'channel_id',
-      'channel_name',
-      channelDescription: 'your channel description',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-    );
+  static void showLocalNotification(RemoteMessage message) async {
+    final path = await getApplicationDocumentsDirectory();
 
-    const NotificationDetails notificationDetails =
-    NotificationDetails(android: androidDetails);
+    console.log('PATH ---> $path');
+    String lang = 'AR';
+    try {
+      File saveFile = File('${path.path}/icon_primary.png');
+      if (!(await saveFile.exists())) {
+        final Uri imageUrl = Uri.parse(
+            'https://www.route-65-dashboard.com/logo.png');
+        final imageResponse = await http.get(imageUrl);
+        await saveFile.writeAsBytes(imageResponse.bodyBytes);
+      }
+
+      File langFile = File('${path.path}/language.config');
+      lang = await langFile.readAsString();
+    } finally {}
+
+    AndroidNotificationDetails? androidDetails;
+    try {
+      File saveFile = File('${path.path}/notifications_primary.jgp');
+      if(true){
+        final Uri imageUrl = Uri.parse(message.notification!.android!.imageUrl!);
+        final imageResponse = await http.get(imageUrl);
+        await saveFile.writeAsBytes(imageResponse.bodyBytes);
+
+        androidDetails = AndroidNotificationDetails(
+            'channel_id',
+            'channel_name',
+            channelDescription: 'your channel description',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: true,
+            styleInformation: BigPictureStyleInformation(
+              FilePathAndroidBitmap('${path.path}/notifications_primary.jgp'),
+              largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
+            )
+        );
+      }
+    } catch (e) {
+      console.log('creating normal notification without image --> ${e}');
+      androidDetails = AndroidNotificationDetails(
+          'channel_id',
+          'channel_name',
+          channelDescription: 'your channel description',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+      );
+    }
+
+    NotificationDetails notificationDetails = NotificationDetails(android: androidDetails);
+    List<dynamic> titles = [], bodies = [];
+
+    titles = jsonDecode(message.notification!.title!);
+    bodies = jsonDecode(message.notification!.body!);
 
     FlutterLocalNotificationsPlugin().show(
       message.notification.hashCode,
-      message.notification?.title,
-      message.notification?.body,
+      titles[lang == 'ar' ? 1 : 0],
+      bodies[lang == 'ar' ? 1 : 0],
       notificationDetails,
     );
   }
