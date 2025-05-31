@@ -135,6 +135,3 @@ flutter:
     - family: Cairo
       fonts:
         - asset: fonts/Cairo.ttf
-
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
