@@ -48,6 +48,12 @@ class L10nEn extends L10n {
   String get location => 'Choose area';
 
   @override
+  String get current_location => 'Delivery location to ';
+
+  @override
+  String get no_orders => 'No. orders';
+
+  @override
   String get login_error => 'Problem happened while trying to login, check your connection and try again later';
 
   @override
@@ -58,6 +64,15 @@ class L10nEn extends L10n {
 
   @override
   String get tokens => 'Tokens : ';
+
+  @override
+  String get points_1 => 'points';
+
+  @override
+  String get points_2 => 'points';
+
+  @override
+  String get vouchers => 'Vouchers';
 
   @override
   String get chatbot_title => 'Route 65 ChatBot';
@@ -96,7 +111,10 @@ class L10nEn extends L10n {
   String get robot_sc => 'start chat ...';
 
   @override
-  String get piece => 'piece';
+  String get piece => 'pieces';
+
+  @override
+  String get continue_shopping => 'Continue shopping!';
 
   @override
   String get meal => 'Meal';
@@ -153,7 +171,7 @@ class L10nEn extends L10n {
   String get b_fit => 'Fit Bread';
 
   @override
-  String get basket_empty => 'Your basket is empty !';
+  String get basket_empty => 'Your basket is empty';
 
   @override
   String get map_t1 => 'Here are our branches in Aqaba!';

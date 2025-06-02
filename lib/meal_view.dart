@@ -178,7 +178,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: Text(itemName, style: TextStyle(fontSize: size.width * .065, fontWeight: FontWeight.bold),)),
+                      Expanded(child: Text(itemName, style: TextStyle(fontSize: size.width * .07, fontWeight: FontWeight.bold),)),
                       Text('${(price * orderQ).toStringAsFixed(2)} JD', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
                         textDirection: isAr ? TextDirection.ltr : TextDirection.rtl,),
                     ],

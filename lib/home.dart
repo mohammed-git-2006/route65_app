@@ -37,6 +37,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   UserProfile userProfile = UserProfile();
   bool loading = true;
+  // --ANI-SET
   final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet(), qrCodeAnimation = AnimationSet();
   final mapAnimation = AnimationSet(), basketAnimation = AnimationSet();
   void setupNotifications() async {
@@ -99,6 +100,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
   List<Map<String, dynamic>> myBasket = [];
+  List<dynamic> catsDetails = [];
 
   void loadData() async {
     await userProfile.loadFromPref();
@@ -122,6 +124,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final catsResponse = await http.get(catsUrl);
       final catsDecoded = jsonDecode(catsResponse.body);
       List.generate(catsDecoded.length, (i) => menuCats.add(catsDecoded[i]));
+      final Uri catsInfoUrl = Uri.parse('https://www.route-65-dashboard.com/api/cats_info');
+      final catsInfoResponse = await http.get(catsInfoUrl);
+      final catsInfoDecoded = jsonDecode(catsInfoResponse.body);
+      catsDetails = List.generate(catsDecoded.length, (i) => [...catsInfoDecoded[i], new AnimationSet()..init(this, .0, 1.0, Durations.medium1, Curves.easeIn)]);
       loadAllAnimationsForMenuItems();
     } catch (err) {
       console.log('[Connection check][1] $err');
@@ -173,6 +179,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     setState(() {
       loading = false;
       tokenUpAni.start();
+      catsDetails[0][4].start();
     });
   }
 
@@ -214,7 +221,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
       for(int i=0;i<menuData[cat].length;++i) {
         final animation = new AnimationSet();
-        animation.init(this, .0, 1.0, Durations.medium1, Curves.decelerate);
+        animation.init(this, .0, 1.0, Durations.long1, Curves.decelerate);
         animationsForCat.add(animation);
       }
 
@@ -223,6 +230,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   void startAnimationsTrailFor(String cat) {
+    console.log('$cat --> \n${catsDetails.map((t) => t).join('\n')}\n===========');
     int i = 0;
     for(final animation in listItemsAnimations[cat]!) {
       animation.reset();
@@ -272,7 +280,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final size = MediaQuery.of(context).size;
 
     final List<dynamic> modifiedList = [];
-    List<int> modificationMap = [];//List.generate((menuData[category] as List<dynamic>).length, (i) => i);
+    List<int> modificationMap = [];
 
     for(int i=0;i<menuData[category].length;++i) {
       final originalItem = menuData[category][i];
@@ -293,7 +301,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
         crossAxisCount: 2,
-        mainAxisSpacing: 15,
+        mainAxisSpacing: 0,
         crossAxisSpacing: 0,
         childAspectRatio: .625,
         children: List.generate(menuData[category].length, (index) {
@@ -301,7 +309,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           final isLiked = userProfile.liked.contains(menuItem['id'] as int);
 
           return Transform.translate(
-            offset: Offset(.0, -20 * math.sin(listItemsAnimations[category]![index].value * math.pi)),
+            offset: Offset(.0, -25 * math.sin(listItemsAnimations[category]![index].value * math.pi)),
             child: Container(
               margin: EdgeInsets.all(5),
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -326,9 +334,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               height: size.width * .45,
                               decoration: BoxDecoration(
                                   color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
-                                  borderRadius: BorderRadius.circular(15),
-                                  image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider,
-                                      fit: BoxFit.cover)
+                                  borderRadius:  BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+                                  image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider, fit: BoxFit.cover),
                               ),
                             ),
                           ),
@@ -434,8 +441,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   String selectedCategory = 'Chicken';
   bool scanningCode = true;
 
-  final map65MainBranch = LatLng(29.5218664,34.999778), map65OtherBranch = LatLng(29.5322255,35.0038199);
-
   double get totalBasketPrice {
     double price = 0;
     for(final item in myBasket) {
@@ -443,22 +448,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     }
 
     return price;
-  }
-
-  get map65MidPoint {
-    return LatLng(
-      (map65MainBranch.latitude  + map65OtherBranch.latitude ) / 2.0,
-      (map65MainBranch.longitude + map65OtherBranch.longitude) / 2.0,
-    );
-  }
-
-  void openLocation(LatLng location) async {
-    Uri uri = Uri.parse('https://maps.app.goo.gl/5TXstuZonzbguVVA7');
-    if (location == map65MainBranch) {
-      uri = Uri.parse('https://maps.app.goo.gl/NMEJK6Q8GjzZHSex7');
-    }
-
-    if (await canLaunchUrl(uri)) launchUrl(uri);
   }
 
   @override
@@ -470,6 +459,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final isAr = Directionality.of(context) == TextDirection.rtl;
 
     return Scaffold(
+      /*appBar: AppBar(
+        centerTitle:true,
+        backgroundColor: cs.secondary,
+        title: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Text(dic.app_name, style: TextStyle(color: cs.surface, fontSize: size.width * .06),),
+        ),
+      ),*/
       body: loading ? Center(child: SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/loading.json')),) : connectionError ? NoInternetPage(refreshCallback: () {
         setState(() {
           loading = true;
@@ -489,86 +486,111 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               },
               controller: pageController,
               children: [
-                SafeArea(
-                  child: Column(children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: Text(dic.map_t1, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .065),),
+                /// --PAGE-PROFILE
+                SingleChildScrollView(
+                  child: Column(spacing: 0, children: [
+                    Padding(padding: EdgeInsets.only(left: 20, right: 20, top: 35), child: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
+                      radius: size.width * .25,
+                    )),
+
+                    SizedBox(height: 25,),
+                    Text(userProfile.name!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .065),),
+
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(userProfile.phone!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
+                        Text(userProfile.location!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
+                        Text('${dic.no_orders} : ${userProfile.no_orders}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
+                      ].map((innerWidget) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: cs.secondary.withAlpha(50),
+                            borderRadius: BorderRadius.circular(45)
+                          ),
+
+                          child: Row(spacing: 5, mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(Icons.tag, color: cs.primary,),
+                            innerWidget
+                          ],)
+                        );
+                      }).toList(),
                     ),
-                    Expanded(
-                      child: Container(
-                        margin: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: cs.secondary.withAlpha(50), width: 4),
-                          borderRadius: BorderRadius.circular(30)
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(25),
-                          child: GoogleMap(
-                            style: 'hyperspace',
-                            initialCameraPosition: CameraPosition(target: map65MidPoint, zoom: 15),
-                            markers: {
-                              Marker(position: map65MainBranch, markerId: MarkerId('main_branch'), onTap: () => openLocation(map65MainBranch)),
-                              Marker(position: map65OtherBranch, markerId: MarkerId('2nd_branch'), onTap: () => openLocation(map65OtherBranch)),
-                            },
-                          )
-                        )
-                      ),
-                    )
-                  ],),
+                  ])
                 ),
 
+                // --PAGE-HOME
                 SingleChildScrollView(
                   child: Column(children: [
-                    ClipPath(
-                      // clipper: UShapeClipper(),
-                      child: Container(
-                        // height: size.height * .5,
-                        width: size.width,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [
-                            cs.secondary, // Forest Green
-                            cs.secondary,
-                          ], begin: Alignment.bottomCenter, end: Alignment.topRight),
+
+                    // --APP-BAR
+                    Container(
+                      width: size.width,
+                      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 5, right: 5, bottom: 10),
+                      decoration: BoxDecoration(
+                        color: cs.secondary
+                      ),
+
+                      /*child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 0),
+                          child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  spacing: 10,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
+                                    ),
+
+                                    Text(
+                                      userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .035,
+                                        overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Transform.translate(offset: Offset(.0, -10 * math.sin(tokenUpAni.value * math.pi)), child: Text('${userProfile.tokens}', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
+                                    SizedBox(width: 5,),
+                                    // Image.asset('assets/token.png', color: Colors.white, colorBlendMode: BlendMode.srcIn, width: 20,),
+                                    Icon(Icons.token, color: Colors.white, size: 20,),
+                                    IconButton(icon: FaIcon(FontAwesomeIcons.refresh, color: cs.surface, size: 20,), onPressed: () {
+                                      tokenUpAni.reset();
+
+                                      loadData();
+                                    },),
+                                  ],
+                                )
+                              ],
+                            ),
+                          ],),
                         ),
+                      ),*/
 
-                        child: SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 15),
-                            child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    spacing: 10,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 25,
-                                        backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
-                                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              dic.current_location,
+                              style: TextStyle(color: cs.surface, fontSize: size.width * .045),
+                            ),
 
-                                      Text(
-                                        userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .035,
-                                          overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Transform.translate(offset: Offset(.0, -10 * math.sin(tokenUpAni.value * math.pi)), child: Text('${userProfile.tokens}', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
-                                      SizedBox(width: 5,),
-                                      Image.asset('assets/token.png', color: Colors.white, colorBlendMode: BlendMode.srcIn, width: 20,),
-                                      IconButton(icon: FaIcon(FontAwesomeIcons.refresh, color: cs.surface, size: 20,), onPressed: () {
-                                        tokenUpAni.reset();
-
-                                        loadData();
-                                      },),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ],),
-                          ),
+                            Text(
+                              userProfile.location ?? ' -- ',
+                              style: TextStyle(color: cs.surface, fontSize: size.width * .045, decoration: TextDecoration.underline, decorationColor: cs.surface,
+                                decorationThickness: 1.25),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -620,48 +642,57 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ),
 
                         SizedBox(height: 10,),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
+                        // --CATS-VIEW
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Container(
+                            padding: EdgeInsets.only(top: 20),
                             child: Row(
                               spacing: 10,
                               children: [
                                 SizedBox(width: 5,),
-                                ...[
-                                  [dic.chicken, 'Chicken', 'mixcheese_chicken'],
-                                  [dic.beef, 'Beef', '65_beef'],
-                                  [dic.hotdogs, 'Hotdog', 'hotdog'],
-                                  [dic.appetizers, 'Appetizers', 'ceaser'],
-                                ].map((pair) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selectedCategory = pair[1];
-                                      startAnimationsTrailFor(pair[1]);
-                                    });
-                                  },
-                                  child: Container(
-                                    width: size.width * .25,
-                                    height: size.width * .25,
-                                    decoration: BoxDecoration(
-                                      color: selectedCategory == pair[1] ? cs.secondary : cs.secondary.withAlpha(50),
-                                      borderRadius: BorderRadius.circular(15)
-                                    ),
+                                ...List.generate(catsDetails.length, (i) {
+                                  final pair = catsDetails[i];
+                                return Transform.translate/*Padding*/(
+                                  offset: Offset(0, math.sin((pair[4] as AnimationSet).value * math.pi / 2.0) * -15),
+                                  // padding: EdgeInsets.only(bottom: ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedCategory = pair[2];
+                                        startAnimationsTrailFor(pair[2]);
 
-                                    child: Column(spacing: 10, mainAxisAlignment: MainAxisAlignment.center, children: [
-                                      Container(
-                                        padding: EdgeInsets.all(10),
-                                        width: size.width * .12,
-                                        height: size.width * .12,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(45),
-                                          image: DecorationImage(image: menuSavedImages[pair[2]] as ImageProvider,
-                                            fit: BoxFit.cover)
-                                        ),
+                                        for(int x=0;x<catsDetails.length;++x) {
+                                          if (x != i) {
+                                            catsDetails[x][4].reset();
+                                          } else {
+                                            catsDetails[x][4].start();
+                                          }
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      width: size.width * .25,
+                                      height: size.width * .25,
+                                      decoration: BoxDecoration(
+                                        color: (selectedCategory == pair[2] ? cs.secondary : cs.secondary.withAlpha(50)),
+                                        borderRadius: BorderRadius.circular(15)
                                       ),
-                                      Text(pair[0], style: TextStyle(fontWeight: FontWeight.bold, color: selectedCategory == pair[1] ? Colors.white : cs.primary),),
-                                    ],),
+
+                                      child: Column(spacing: 10, mainAxisAlignment: MainAxisAlignment.center, children: [
+                                        Container(
+                                          padding: EdgeInsets.all(10),
+                                          width: size.width * .12,
+                                          height: size.width * .12,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(45),
+                                            image: DecorationImage(image: menuSavedImages[pair[3]] as ImageProvider,
+                                              fit: BoxFit.cover)
+                                          ),
+                                        ),
+                                        Text(pair[isAr ? 1 : 0], style: TextStyle(fontWeight: FontWeight.bold, color: selectedCategory == pair[2] ? Colors.white : cs.primary),),
+                                      ],),
+                                    ),
                                   ),
                                 );
                               }).toList(),
@@ -670,6 +701,49 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             ),
                           ),
                         ),
+
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Row(
+                          spacing: 10,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {},
+                                child: Container(
+                                  padding: EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: cs.secondary.withAlpha(15),
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: Border.all(color: Colors.grey.shade300, width: 1)
+                                  ),
+                                  // --BUTTON-ASSETS
+                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                    Image.asset('assets/coin.png', width: 35,),
+                                    Text('${userProfile.tokens} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: size.width * .045),),
+                                  ],),
+                                ),
+                              ),
+                            ),
+
+                            Expanded(
+                              child: GestureDetector(
+                                // BUTTON-VOUCHERS
+                                onTap: () {},
+                                child: Container(
+                                  padding: EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                      color: cs.secondary.withAlpha(15),
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(color: Colors.grey.shade300, width: 1)
+                                  ),
+                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                    Image.asset('assets/voucher.png', width: 35,),
+                                    Text(dic.vouchers, style: TextStyle(color: cs.primary, fontSize: size.width * .05),)
+                                  ],),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),),
 
                         getMenuItemsView(selectedCategory),
 
@@ -693,7 +767,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 ),
 
 
-                // PAGE-BASKET
+                // --PAGE-BASKET
                 Container(
                   margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -715,14 +789,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         mainAxisSize: MainAxisSize.min,
                         spacing: 10,
                         children: [
-                          SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/empty_basket.json')),
+                          SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/empty_basket.json', repeat: false)),
                           Text(dic.basket_empty),
+                          GestureDetector(
+                            onTap: () {
+                              pageController.jumpToPage(1);
+                              setState(() {
+                                currentPage = 1;
+                              });
+                            },
+
+                            child: Text(dic.continue_shopping, style: TextStyle(color: cs.secondary, fontStyle: FontStyle.normal, decoration: TextDecoration.underline),),
+                          )
                         ],
                       )
                     ),) : Expanded(child: SingleChildScrollView(child: Column(
                       spacing: 20,
                       children: [
-                        ...(myBasket.map((basketItem) {
+                        ...(List.generate(myBasket.length, (i) {
+                          final basketItem = myBasket[myBasket.length - i - 1];
                           return Container(
                             margin: EdgeInsets.symmetric(horizontal: 15),
                             decoration: BoxDecoration(
@@ -732,7 +817,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             ),
 
                             padding: EdgeInsets.all(10),
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
                               Padding(padding: EdgeInsets.all(5), child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -764,9 +849,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                               SizedBox(height: 10,),
 
-                              if (basketItem['bt'] != null) Text('${dic.bv_bt}\t${breadName(dic, basketItem['bt'])}'),
-                              if (basketItem['pt'] != null) Text('${dic.bv_pt}\t${pattyName(dic, basketItem['pt'])}'),
-                              if (basketItem['ft'] != null) Text('${dic.bv_ft}\t${friesName(dic, basketItem['ft'])}'),
+                              if (basketItem['bt'] != null) basketViewLineWidget(dic.bv_bt, breadName(dic, basketItem['bt']), '🍞'),
+                              if (basketItem['pt'] != null) basketViewLineWidget(dic.bv_pt, pattyName(dic, basketItem['pt']), '🍔'),
+                              if (basketItem['ft'] != null) basketViewLineWidget(dic.bv_ft, friesName(dic, basketItem['ft']), '🍟'),
                               if (basketItem['g']  != null) Text('${basketItem['g']} ${dic.gram} '),
                               if (basketItem['cat'] == 'Appetizers' && basketItem['q'] != 1) Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}',
                                     textDirection: TextDirection.ltr,)
@@ -774,12 +859,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             ],),
                           );
                         }).toList()),
+                        SizedBox(height: 10,)
 
                       ],
                     ),)),
                   ],),
                 ),
 
+                // --PAGE-BOT
                 ChatBotPage()
               ],
             ),
@@ -789,12 +876,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
             color: cs.secondary.withAlpha(50),
             height: 70,
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, textDirection: isAr ? TextDirection.ltr : TextDirection.rtl, children: [
+              // --NAV-BAR
               GestureDetector(onTap: () {
                 pageController.jumpToPage(3);
                 setState(() {
                   currentPage = 3;
                 });
-              }, child: FaIcon(FontAwesomeIcons.robot, color: currentPage == 3 ? cs.secondary : cs.primary,)),
+              }, child: FaIcon(
+                currentPage == 3 ? Icons.smart_toy : Icons.smart_toy_outlined, size:30, color: currentPage == 3 ? cs.secondary : cs.primary,)),
 
               GestureDetector(
                 onTap: () {
@@ -805,7 +894,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 },
                 child: SizedBox(width:30, height: 30, child: Stack(
                   children: [
-                    Positioned.fill(child: FaIcon(FontAwesomeIcons.basketShopping, color: currentPage == 2 ? cs.secondary : cs.primary,size: 25,)),
+                    Positioned.fill(child: FaIcon(
+                      currentPage == 2 ? Icons.shopping_basket :Icons.shopping_basket_outlined, size: 30, color: currentPage == 2 ? cs.secondary : cs.primary,)),
                     Positioned(top: 0, right: 0, child: Transform.translate(
                       offset: Offset(15, -15 + (math.sin(basketAnimation.value * math.pi) * -10)),
                       child: Container(
@@ -828,26 +918,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   setState(() {
                     currentPage = 1;
                   });
-                }, child: FaIcon(FontAwesomeIcons.home, color: currentPage == 1 ? cs.secondary : cs.primary,),
+                }, child: FaIcon(currentPage == 1 ? Icons.home : Icons.home_outlined, size: 32.5, color: currentPage == 1 ? cs.secondary : cs.primary,),
               ),
 
               GestureDetector(onTap: () {
-                pageController.jumpToPage(0);//, duration: Durations.medium2, curve: Curves.decelerate);
-                setState(() {
-                  currentPage = 0;
-                });
+                Navigator.pushNamed(context, '/qr_code');
 
-              }, child: FaIcon(FontAwesomeIcons.mapLocationDot, color: currentPage == 0 ? cs.secondary : cs.primary,),),
+
+              }, child: FaIcon(Icons.qr_code_rounded, size:30, color: cs.primary),),
 
 
               GestureDetector(onTap: () {
-
-              },child: FaIcon(FontAwesomeIcons.qrcode, /*color: currentPage == 0 ? cs.secondary : cs.primary,*/)),
+                pageController.jumpToPage(0);
+                setState(() {
+                  currentPage = 0;
+                });
+              },child: FaIcon(currentPage == 0 ? Icons.person : Icons.person_outlined, size: 30, color: currentPage == 0 ? cs.secondary : cs.primary,)),
             ],),
           )
         ],
       ),
     );
+  }
+
+  Widget basketViewLineWidget(String name, String content, String icon) {
+    return Row(children: [
+      Text(name),
+      Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondary.withAlpha(50),
+          borderRadius: BorderRadius.circular(45),
+        ),
+
+        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        child: Row(spacing: 5, children: [
+          Text(icon),
+          Text(content, style: TextStyle(color: Theme.of(context).colorScheme.primary),)
+        ],),
+      )
+    ],);
   }
 
   @override

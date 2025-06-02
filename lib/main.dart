@@ -3,23 +3,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:route65/auth_engine.dart';
-import 'package:route65/chatbot.dart';
 import 'package:route65/firebase_options.dart';
 import 'package:route65/home.dart';
 import 'package:route65/l10n/animation_set.dart';
 import 'package:route65/meal_view.dart';
-import 'package:sign_in_button/sign_in_button.dart';
-import 'dart:developer' as console;
+import 'package:route65/qr_page.dart';
 import 'l10n/l10n.dart';
 import 'dart:math' as math;
 
 Future<void> onBackgroundMessageCallback(RemoteMessage message)  async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   AuthEngine.showLocalNotification(message);
-
 }
 
 void main() async {
@@ -28,7 +27,6 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(onBackgroundMessageCallback);
   runApp(MaterialLauncher());
 }
-
 
 class MaterialLauncher extends StatelessWidget {
   const MaterialLauncher({super.key});
@@ -47,12 +45,13 @@ class MaterialLauncher extends StatelessWidget {
 
     final theme = ThemeData(
       colorScheme: cs,
-      fontFamily: 'Cairo',
+      textTheme: GoogleFonts.tajawalTextTheme(),
+      /*fontFamily: 'NotoSans',
       textTheme: TextTheme(
         bodyLarge:  TextStyle(color: cs.primary),
         bodyMedium: TextStyle(color: cs.primary),
         titleLarge: TextStyle(color: cs.primary),
-      ),
+      ),*/
 
       inputDecorationTheme: InputDecorationTheme(
 
@@ -88,11 +87,12 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      // locale: const Locale('ar'), // or 'ar'
+      locale: const Locale('ar'),
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
-        '/meal_view' : (context) => MealView()
+        '/meal_view' : (context) => MealView(),
+        '/qr_code' : (context) => QrPage()
       },
       initialRoute: '/login',
       supportedLocales: L10n.supportedLocales,
@@ -142,7 +142,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       if (result.status == CheckResult.FIRST_TIME) {
         p2NameController.text = authEng.userProfile.name ?? '';
         p2NameHolder = p2NameController.text;
-        pageController.nextPage(duration: Durations.medium2, curve: Curves.easeIn);
+        pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
         Future.delayed(Durations.medium2).then((_) => p2Pic.start());
       } else if (result.status == CheckResult.SUCCESS) {
         disposeAnimations();
@@ -286,7 +286,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void googleLoginCallback() async {
     showDialog(context: context, barrierDismissible: false, builder: (context) {
-      return Center(child: Lottie.asset('assets/loading.json'),);
+      return Center(child: SizedBox(width: MediaQuery.of(context).size.width * .5,child: Lottie.asset('assets/loading.json')),);
     },);
 
     final result = await authEng.loginGoogle();
@@ -301,7 +301,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         setState(() {
           p2NameController.text = authEng.userProfile.name ?? '';
           p2NameHolder = p2NameController.text;
-          pageController.nextPage(duration: Durations.medium2, curve: Curves.easeIn);
+          pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
           viewTitle = L10n.of(context)!.completion;
           Future.delayed(Durations.medium2).then((_) => p2Pic.start());
         });
@@ -459,7 +459,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             Text(dic.name_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
                           ]);
                         } else {
-                          pageController.nextPage(duration: Durations.medium2, curve: Curves.easeIn);
+                          pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
                           Future.delayed(Durations.long1).then((_) => p3t1.start());
                         }
                       },
@@ -503,9 +503,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   child: Directionality(
                     textDirection: TextDirection.ltr,
                     child: TextField(
+                      inputFormatters: [
+                        PhoneNumberFormatter(),
+                      ],
                       maxLength: 8,
                       controller: p3controller,
                       textAlignVertical: TextAlignVertical.center,
+                      keyboardType: TextInputType.number,
                       style: TextStyle(letterSpacing: 2, fontSize: size.width * .05),
                       decoration: InputDecoration(
                         counterText: '',
@@ -539,7 +543,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     pageController.previousPage(duration: Durations.long1, curve: Curves.easeIn);
                   },
 
-                  // child: Icon(L10n.of(context).),
                   child: Icon(Icons.chevron_left),
                 ) ,
                 Expanded(
@@ -563,19 +566,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             });
                           });
                         }, codeSent: (verificationId, forceResendingToken) {
-                          /*ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('${verificationId}'),
-                          ));*/
-                          pageController.nextPage(duration: Durations.medium2, curve: Curves.easeInBack).then((_) {
+                          pageController.nextPage(duration: Durations.short2, curve: Curves.easeInBack).then((_) {
                             p4t1.start();
                           });
 
                           _verificationId = verificationId;
                         }, codeAutoRetrievalTimeout: (verificationId) {
-                          getBottomSheet([
+                          /*getBottomSheet([
                             Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
                             Text('${dic.send_code_err} - time out', style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
-                          ]);
+                          ]);*/
                           setState(() {
                             setState(() {
                               phoneComplete = p3controller.text.length == 8;
@@ -697,7 +697,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                           selectedArea = areasList[0];
                         });
-                        pageController.nextPage(duration: Durations.medium2, curve: Curves.easeInBack);
+                        pageController.nextPage(duration: Durations.short2, curve: Curves.easeInBack);
                         p5t1.start();
                       } catch(err) {
 
@@ -761,7 +761,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05, child: ElevatedButton(
               child: Text(dic.continue_),
               onPressed: !userSelectedArea ?  null : () async {
-                pageController.nextPage(duration: Durations.medium2, curve: Curves.easeIn);
+                pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
               },
             ),)
           ],),
@@ -779,7 +779,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05, child: ElevatedButton(
               child: Text(dic.finish),
               onPressed: () async {
-                await authEng.userProfile.update(name: p2NameController.text, location: selectedArea, tokens: 0, completed: true, phone: '07${p3controller.text}');
+                await authEng.userProfile.update(name: p2NameController.text, location: selectedArea, tokens: 0, completed: true, phone: '07${p3controller.text}', no_orders: 0);
                 disposeAnimations();
                 Navigator.of(context).popAndPushNamed('/home');
               },

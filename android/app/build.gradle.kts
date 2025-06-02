@@ -25,7 +25,7 @@ dependencies {
 android {
     namespace = "com.route65.route_65"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true // ✅ Required
@@ -55,6 +55,13 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+
+        create("release") {
+            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
 
@@ -62,6 +69,11 @@ android {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
         }
+
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+        }
+
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

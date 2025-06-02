@@ -48,6 +48,12 @@ class L10nAr extends L10n {
   String get location => 'اختر الموقع';
 
   @override
+  String get current_location => 'موقع الدليفيري ';
+
+  @override
+  String get no_orders => 'عدد الأوردرات';
+
+  @override
   String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';
 
   @override
@@ -58,6 +64,15 @@ class L10nAr extends L10n {
 
   @override
   String get tokens => 'توكينز : ';
+
+  @override
+  String get points_1 => 'نقطة';
+
+  @override
+  String get points_2 => 'نقاط';
+
+  @override
+  String get vouchers => 'القسائم';
 
   @override
   String get chatbot_title => 'روت 65 شات بوت';
@@ -99,6 +114,9 @@ class L10nAr extends L10n {
   String get piece => 'قطع';
 
   @override
+  String get continue_shopping => 'عبّيها!';
+
+  @override
   String get meal => 'وجبة';
 
   @override
@@ -123,7 +141,7 @@ class L10nAr extends L10n {
   String get mv_notes => 'أضف ملاحظات إضافية ...';
 
   @override
-  String get mv_post => 'أضف الطّلب';
+  String get mv_post => 'أضف إلى السّلة';
 
   @override
   String get your_basket => 'السّلّة';
@@ -153,7 +171,7 @@ class L10nAr extends L10n {
   String get b_fit => 'خبزة لياقة';
 
   @override
-  String get basket_empty => 'سلتك فاضية!';
+  String get basket_empty => 'سلتك فاضية';
 
   @override
   String get map_t1 => 'أفرع روت 65 في العقبة!';

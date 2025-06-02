@@ -173,6 +173,18 @@ abstract class L10n {
   /// **'Choose area'**
   String get location;
 
+  /// No description provided for @current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery location to '**
+  String get current_location;
+
+  /// No description provided for @no_orders.
+  ///
+  /// In en, this message translates to:
+  /// **'No. orders'**
+  String get no_orders;
+
   /// No description provided for @login_error.
   ///
   /// In en, this message translates to:
@@ -196,6 +208,24 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Tokens : '**
   String get tokens;
+
+  /// No description provided for @points_1.
+  ///
+  /// In en, this message translates to:
+  /// **'points'**
+  String get points_1;
+
+  /// No description provided for @points_2.
+  ///
+  /// In en, this message translates to:
+  /// **'points'**
+  String get points_2;
+
+  /// No description provided for @vouchers.
+  ///
+  /// In en, this message translates to:
+  /// **'Vouchers'**
+  String get vouchers;
 
   /// No description provided for @chatbot_title.
   ///
@@ -272,8 +302,14 @@ abstract class L10n {
   /// No description provided for @piece.
   ///
   /// In en, this message translates to:
-  /// **'piece'**
+  /// **'pieces'**
   String get piece;
+
+  /// No description provided for @continue_shopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue shopping!'**
+  String get continue_shopping;
 
   /// No description provided for @meal.
   ///
@@ -386,7 +422,7 @@ abstract class L10n {
   /// No description provided for @basket_empty.
   ///
   /// In en, this message translates to:
-  /// **'Your basket is empty !'**
+  /// **'Your basket is empty'**
   String get basket_empty;
 
   /// No description provided for @map_t1.

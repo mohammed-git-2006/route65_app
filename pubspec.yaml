@@ -63,6 +63,8 @@ dependencies:
   gif: ^2.3.0
   google_maps_flutter: ^2.12.2
   url_launcher: ^6.3.1
+  socket_io_client: ^3.1.2
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -107,6 +109,11 @@ flutter:
     - assets/heart.gif
     - assets/heart_filled.png
     - assets/heart_unfilled.png
+    - assets/coin.png
+    - assets/voucher.png
+    - assets/burger.png
+    - assets/telephone.png
+    - assets/map_pin.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -132,6 +139,9 @@ flutter:
 #         - asset: fonts/TrajanPro_Bold.ttf
 #           weight: 700
   fonts:
+    - family: NotoSans
+      fonts:
+        - asset: fonts/noto-sans.ttf
     - family: Cairo
       fonts:
         - asset: fonts/Cairo.ttf
