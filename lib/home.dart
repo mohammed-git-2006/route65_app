@@ -94,13 +94,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     }
   }
 
-  bool connectionError = false;
+  bool connectionError = false, checkingVoucher = false, usingVoucher = false;
   List<Map<String, dynamic>> bannersAd = [];
   Map<String, dynamic> menuData = {};
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
   List<Map<String, dynamic>> myBasket = [];
   List<dynamic> catsDetails = [];
+  TextEditingController voucherController = TextEditingController();
+  double voucherDiscountPerc = .0;
 
   void loadData() async {
     await userProfile.loadFromPref();
@@ -214,6 +216,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   Map<String, List<AnimationSet>> listItemsAnimations = {};
+
+  void loadVoucherInfoFromServer() async {
+
+  }
 
   void loadAllAnimationsForMenuItems() {
     for(String cat in menuCats) {
@@ -531,6 +537,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           ),
                         );
                       }).toList(),),
+                    ),
+
+                    ElevatedButton(
+                      child: Text('Reset App'),
+                      onPressed: () {
+                        SharedPreferences.getInstance().then((prefs) {
+                          prefs.clear();
+                          FirebaseAuth.instance.signOut();
+                          FirebaseFirestore.instance.collection('app-users').doc(userProfile.uid).delete();
+                          GoogleSignIn().signOut();
+                          Navigator.of(context).popAndPushNamed('/login');
+                        });
+                      },
                     )
                   ])
                 ),
@@ -727,7 +746,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     border: Border.all(color: Colors.grey.shade300, width: 1)
                                   ),
                                   // --BUTTON-ASSETS
-                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                     Image.asset('assets/coin.png', width: 35,),
                                     Text('${userProfile.tokens} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: size.width * .045),),
                                   ],),
@@ -735,7 +754,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               ),
                             ),
 
-                            Expanded(
+                            /*Expanded(
                               child: GestureDetector(
                                 // BUTTON-VOUCHERS
                                 onTap: () {},
@@ -752,7 +771,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   ],),
                                 ),
                               ),
-                            ),
+                            ),*/
                           ],
                         ),),
 
@@ -789,7 +808,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('${dic.your_basket}', style: TextStyle(fontSize: size.width * .055)),
-                          Text('${totalBasketPrice.toStringAsFixed(2)} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),)
+                          if (!usingVoucher) Text('${totalBasketPrice.toStringAsFixed(2)} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),),
+                          if (usingVoucher) Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 15,
+                            children: [
+                              Text('${totalBasketPrice.toStringAsFixed(2)} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.primary, decoration: TextDecoration.lineThrough, decorationThickness: 3, decorationStyle: TextDecorationStyle.wavy, decorationColor: cs.primary)),
+                              Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} JD', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary))
+                            ],
+                          )
                         ],
                       ),
                     ),
@@ -815,6 +842,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ],
                       )
                     ),) : Expanded(child: SingleChildScrollView(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 20,
                       children: [
                         ...(List.generate(myBasket.length, (i) {
@@ -864,16 +892,139 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               if (basketItem['pt'] != null) basketViewLineWidget(dic.bv_pt, pattyName(dic, basketItem['pt']), '🍔'),
                               if (basketItem['ft'] != null) basketViewLineWidget(dic.bv_ft, friesName(dic, basketItem['ft']), '🍟'),
                               if (basketItem['g']  != null) Text('${basketItem['g']} ${dic.gram} '),
-                              if (basketItem['cat'] == 'Appetizers' && basketItem['q'] != 1) Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}',
-                                    textDirection: TextDirection.ltr,)
-
+                              if (basketItem['cat'] == 'Appetizers' && basketItem['q'] != 1) Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}', textDirection: TextDirection.ltr,)
                             ],),
                           );
                         }).toList()),
-                        SizedBox(height: 10,)
 
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                          child: Text(dic.use_voucher,style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0525),
+                            textAlign: TextAlign.start),
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300, width: 1),
+                              borderRadius: BorderRadius.circular(15),
+                              color: cs.surface
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Row(
+                                children: [
+                                  Image.asset('assets/voucher.png', height: 20,),
+                                  Expanded(
+                                    child: TextField(
+                                      textAlignVertical: TextAlignVertical.bottom,
+                                      controller: voucherController,
+                                      decoration: InputDecoration(
+                                        filled: false,
+                                        hintText: '00XX21YY',
+                                        hintStyle: TextStyle(color: Colors.grey.shade400,)
+                                      ),
+                                    ),
+                                  ),
+
+                                  GestureDetector(
+                                    onTap: checkingVoucher ? null : () {
+                                      setState(() {
+                                        checkingVoucher = true;
+                                        usingVoucher = false;
+                                        Future.delayed(Duration(seconds: 1)).then((_) {
+                                          setState(() {
+                                            voucherDiscountPerc = 10;
+                                            usingVoucher = true;
+                                            checkingVoucher = false;
+                                          });
+                                        });
+                                      });
+                                    },
+                                    child: Transform.translate(offset: Offset(0, 2), child:
+                                      Text(
+                                        dic.check_voucher,
+                                        style: TextStyle(
+                                          color: checkingVoucher ? Colors.grey.shade600 : cs.secondary,
+                                          fontWeight: FontWeight.bold
+                                        ),
+                                      )
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 0,),
+
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 15), child: Column(
+                          spacing: 5,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(dic.total_price,style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425),
+                                    textAlign: TextAlign.start),
+
+                                Text('$totalBasketPrice JD', style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425, color: cs.secondary))
+
+                              ],
+                            ),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(dic.voucher_value,style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425),
+                                    textAlign: TextAlign.start),
+
+                                Text('$voucherDiscountPerc %', style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
+
+                              ],
+                            ),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(dic.price_after_discount,style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0425),
+                                    textAlign: TextAlign.start),
+                                Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} JD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0425, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
+
+                              ],
+                            ),
+                          ],
+                        ),),
+
+                        SizedBox(height: 50,),
                       ],
                     ),)),
+
+                    GestureDetector(
+
+                      child: Container(
+                        height: myBasket.isEmpty ? 0 : 50,
+                        width: size.width,
+                        padding: EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: cs.secondary
+                        ),
+
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 15,
+                            children: [
+                              Text(dic.continue_, style: TextStyle(fontWeight: FontWeight.bold,
+                                  color: cs.surface, fontSize: size.width * .045),),
+
+                              FaIcon(Directionality.of(context) == TextDirection.rtl ? FontAwesomeIcons.arrowLeft : FontAwesomeIcons.arrowLeft, color: cs.surface, size: 15,)
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
                   ],),
                 ),
 
@@ -934,7 +1085,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
               GestureDetector(onTap: () {
                 Navigator.pushNamed(context, '/qr_code', arguments: userProfile.phone).then((value) {
-                  print('[[QR_CODE_PAGE]] ==> got callback');
                   loadTokensFromServer().then((_) => setState(() {}));
                 });
 

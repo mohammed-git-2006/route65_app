@@ -98,13 +98,13 @@ abstract class L10n {
   /// No description provided for @login.
   ///
   /// In en, this message translates to:
-  /// **'login'**
+  /// **'login / signup'**
   String get login;
 
   /// No description provided for @google_button.
   ///
   /// In en, this message translates to:
-  /// **'Login with Google'**
+  /// **'continue with Google'**
   String get google_button;
 
   /// No description provided for @facebook_button.
@@ -200,8 +200,38 @@ abstract class L10n {
   /// No description provided for @get_back.
   ///
   /// In en, this message translates to:
-  /// **'Go back to home'**
+  /// **'continue'**
   String get get_back;
+
+  /// No description provided for @use_voucher.
+  ///
+  /// In en, this message translates to:
+  /// **'use discount voucher %'**
+  String get use_voucher;
+
+  /// No description provided for @check_voucher.
+  ///
+  /// In en, this message translates to:
+  /// **'check'**
+  String get check_voucher;
+
+  /// No description provided for @total_price.
+  ///
+  /// In en, this message translates to:
+  /// **'total price'**
+  String get total_price;
+
+  /// No description provided for @voucher_value.
+  ///
+  /// In en, this message translates to:
+  /// **'discount value'**
+  String get voucher_value;
+
+  /// No description provided for @price_after_discount.
+  ///
+  /// In en, this message translates to:
+  /// **'price after discount'**
+  String get price_after_discount;
 
   /// No description provided for @login_error.
   ///

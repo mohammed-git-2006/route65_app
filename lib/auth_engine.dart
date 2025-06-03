@@ -3,7 +3,7 @@
 
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -265,9 +265,8 @@ class AuthEngine {
   }
 }
 
-
-class PhoneNumberFormatter extends TextInputFormatter {
-  final Map<String, String> _mapping = {
+class PhoneNumberFormatter{
+  static Map<String, String> mapping = {
     '٠': '0',
     '١': '1',
     '٢': '2',
@@ -279,9 +278,4 @@ class PhoneNumberFormatter extends TextInputFormatter {
     '٨': '8',
     '٩': '9',
   };
-
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    return newValue.copyWith(text: oldValue.text.split('').map((char) => _mapping[char] ?? char).join(''), selection: newValue.selection);
-  }
 }

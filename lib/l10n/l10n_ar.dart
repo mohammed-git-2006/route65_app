@@ -60,7 +60,22 @@ class L10nAr extends L10n {
   String get qr_scan_err => 'تم إستحقاق نقاط هذه الفاتورة';
 
   @override
-  String get get_back => 'الرّجوع';
+  String get get_back => 'المتابعة';
+
+  @override
+  String get use_voucher => 'استخدم كوبون خصم %';
+
+  @override
+  String get check_voucher => 'التحّقق';
+
+  @override
+  String get total_price => 'السّعر الكلّّي';
+
+  @override
+  String get voucher_value => 'قيمة الخصم';
+
+  @override
+  String get price_after_discount => 'القيمة بعد الخصم';
 
   @override
   String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';

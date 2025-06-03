@@ -51,20 +51,19 @@ class MaterialLauncher extends StatelessWidget {
       ),*/
 
       inputDecorationTheme: InputDecorationTheme(
-
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
 
-        contentPadding: EdgeInsets.all(18),
+        contentPadding: EdgeInsets.all(10),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none
         ),
 
         filled: true,
-        fillColor: Colors.grey.shade200
+        fillColor: Colors.grey.shade200,
       ),
 
       buttonTheme: ButtonThemeData(
@@ -84,7 +83,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      // locale: const Locale('ar'),
+      locale: const Locale('ar'),
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -339,6 +338,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           Stack(
             children: [
               Positioned(
+                left: 0, right: 0, top: 0, bottom: size.height * .6,
+                child: ClipPath(
+
+                  clipper: TopCustomClipper(),
+                  child: Container(
+                    height: size.height,
+                    color: cs.secondary,
+                  ),
+                ),
+              ),
+              Positioned(
                 left: 0,
                 right: 0,
                 top: size.height * .125 - (size.height * .05 * titleAnimation.value),
@@ -348,7 +358,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset('assets/route65_logo_bg.png', color: cs.primary, width: size.width * .5,)
+                        Image.asset('assets/route65_logo_bg.png', width: size.width * .5, colorBlendMode: BlendMode.srcIn, color: cs.surface)
                       ],
                     ),
                   ),
@@ -366,21 +376,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       onTap: googleLoginCallback,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: cs.secondary,
                           boxShadow: [BoxShadow(color: Colors.grey.shade200, spreadRadius: 10, blurRadius: 20)],
                           borderRadius: BorderRadius.circular(10)
                         ),
 
-                        padding: EdgeInsets.all(15),
+                        padding: EdgeInsets.all(10),
                         child: Row(spacing: 10, children: [
-                          Image.asset('assets/google_logo.png', width: 30,),
-                          Text(dic.google_button)
+                          ClipOval(child: Container(color: cs.surface, padding: EdgeInsets.all(5), child: Image.asset('assets/google_logo.png', width: 20,))),
+                          Text(dic.google_button, style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold),)
                         ],),
                       ),
                     ),
                   ),
 
-                  Opacity(
+                  /*Opacity(
                     opacity: facebookButtonAnimation.value,
                     child: GestureDetector(
                       onTap: facebookLoginCallback,
@@ -399,7 +409,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ],),
                       ),
                     ),
-                  ),
+                  ),*/
                 ],
               )),
             ],
@@ -499,30 +509,34 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   opacity: p3input.value,
                   child: Directionality(
                     textDirection: TextDirection.ltr,
-                    child: TextField(
-                      inputFormatters: [
-                        PhoneNumberFormatter(),
-                      ],
-                      maxLength: 8,
-                      controller: p3controller,
-                      textAlignVertical: TextAlignVertical.center,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(letterSpacing: 2, fontSize: size.width * .05),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        hintText: '...',
-                        contentPadding: EdgeInsets.all(5),
-                        prefix: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: 10,
-                            children: [
-                              Icon(Icons.phone, color: cs.secondary,),
-                              Text('07', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold),),
-                            ],
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(15)
+                      ),
+
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.phone, color: cs.secondary,),
+                          SizedBox(width: 6,),
+                          Transform.translate(offset: Offset(0, 2), child: Text('07', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: size.width * .05),)),
+                          Expanded(
+                            child: TextField(
+                              maxLength: 8,
+                              controller: p3controller,
+                              textAlignVertical: TextAlignVertical.center,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(letterSpacing: 2, fontSize: size.width * .05),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                hintText: '...',
+                                contentPadding: EdgeInsets.only(top: 5, bottom: 5, left: 15, right: 5),
+                              ),
+                            ),
                           ),
-                        )
+                        ],
                       ),
                     ),
                   ),
@@ -548,6 +562,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       setState(() {
                         phoneComplete = false;
                       });
+
+                      p3controller.text = p3controller.text.split('').map((char) => PhoneNumberFormatter.mapping.keys.contains(char) ? PhoneNumberFormatter.mapping[char] : char).toList().join('');
 
                       FirebaseAuth.instance.verifyPhoneNumber(
                         verificationCompleted: (phoneAuthCredential) {
@@ -633,15 +649,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(10)
                               ),
 
-                              padding: EdgeInsets.all(5),
-                              child: TextField(
-                                // keyboardType: TextInputType.number,
-                                decoration: InputDecoration(fillColor: Colors.grey.shade50, contentPadding: EdgeInsets.zero, counterText: ''),
-                                style: TextStyle(color: Colors.black),
-                                textAlign: TextAlign.center,
-                                controller: _phoneControllers[index],
-                                focusNode:  _controllersNodes[index],
-                                maxLength:  1,
+                              padding: EdgeInsets.all(3),
+                              child: Center(
+                                child: TextField(
+                                  // keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(fillColor: Colors.grey.shade50, contentPadding: EdgeInsets.zero, counterText: ''),
+                                  style: TextStyle(color: Colors.black),
+                                  textAlign: TextAlign.center,
+                                  controller: _phoneControllers[index],
+                                  focusNode:  _controllersNodes[index],
+                                  maxLength:  1,
+                                ),
                               ),
                             ),
                           ),
@@ -785,5 +803,35 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+}
+
+
+class TopCustomClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    // TODO: implement getClip
+    final path = Path();
+    path.lineTo(0, size.height - 50);
+
+    final firstControl = Offset(size.width / 4, size.height);
+    final firstEnd = Offset(size.width / 2, size.height - 40);
+    path.quadraticBezierTo(firstControl.dx, firstControl.dy, firstEnd.dx, firstEnd.dy);
+
+    final secondControl = Offset(size.width * 3 / 4, size.height - 80);
+    final secondEnd = Offset(size.width, size.height - 20);
+    path.quadraticBezierTo(secondControl.dx, secondControl.dy, secondEnd.dx, secondEnd.dy);
+
+    path.lineTo(size.width, 0);
+    path.close();
+
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return false;
   }
 }

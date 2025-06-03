@@ -9,10 +9,10 @@ class L10nEn extends L10n {
   L10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get login => 'login';
+  String get login => 'login / signup';
 
   @override
-  String get google_button => 'Login with Google';
+  String get google_button => 'continue with Google';
 
   @override
   String get facebook_button => 'Login with Facebook';
@@ -60,7 +60,22 @@ class L10nEn extends L10n {
   String get qr_scan_err => 'This code has been scanned before';
 
   @override
-  String get get_back => 'Go back to home';
+  String get get_back => 'continue';
+
+  @override
+  String get use_voucher => 'use discount voucher %';
+
+  @override
+  String get check_voucher => 'check';
+
+  @override
+  String get total_price => 'total price';
+
+  @override
+  String get voucher_value => 'discount value';
+
+  @override
+  String get price_after_discount => 'price after discount';
 
   @override
   String get login_error => 'Problem happened while trying to login, check your connection and try again later';
