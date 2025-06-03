@@ -206,6 +206,7 @@ class _QrPageState extends State<QrPage> {
     },);
   }
 
+
   @override
   void dispose() {
     super.dispose();
