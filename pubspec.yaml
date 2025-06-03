@@ -114,6 +114,7 @@ flutter:
     - assets/burger.png
     - assets/telephone.png
     - assets/map_pin.png
+    - assets/congrats.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

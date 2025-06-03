@@ -51,7 +51,16 @@ class L10nEn extends L10n {
   String get current_location => 'Delivery location to ';
 
   @override
-  String get no_orders => 'No. orders';
+  String get no_orders => 'orders';
+
+  @override
+  String get congrats => 'Congrats, you points now are -1 -2 🥳';
+
+  @override
+  String get qr_scan_err => 'This code has been scanned before';
+
+  @override
+  String get get_back => 'Go back to home';
 
   @override
   String get login_error => 'Problem happened while trying to login, check your connection and try again later';

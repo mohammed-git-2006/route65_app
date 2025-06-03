@@ -36,10 +36,7 @@ class MaterialLauncher extends StatelessWidget {
     final cs = ColorScheme.light(
       // surface: Color(0xffededfa),
       surface: Colors.white,
-
-        // Color(0xfff7f5dc),
       secondary: Color(0xFF0C8A5E),
-      // secondary: Colors.green.shade800.withAlpha(150),
       primary: Colors.black// Color(0xff241e20),
     );
 
@@ -87,7 +84,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
+      // locale: const Locale('ar'),
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),

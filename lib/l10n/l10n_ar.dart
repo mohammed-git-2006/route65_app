@@ -51,7 +51,16 @@ class L10nAr extends L10n {
   String get current_location => 'موقع الدليفيري ';
 
   @override
-  String get no_orders => 'عدد الأوردرات';
+  String get no_orders => 'الأوردرات';
+
+  @override
+  String get congrats => 'تهانينا، نقاطك الآن -1 -2 🥳';
+
+  @override
+  String get qr_scan_err => 'تم إستحقاق نقاط هذه الفاتورة';
+
+  @override
+  String get get_back => 'الرّجوع';
 
   @override
   String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';

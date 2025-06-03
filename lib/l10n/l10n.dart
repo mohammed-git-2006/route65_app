@@ -182,8 +182,26 @@ abstract class L10n {
   /// No description provided for @no_orders.
   ///
   /// In en, this message translates to:
-  /// **'No. orders'**
+  /// **'orders'**
   String get no_orders;
+
+  /// No description provided for @congrats.
+  ///
+  /// In en, this message translates to:
+  /// **'Congrats, you points now are -1 -2 🥳'**
+  String get congrats;
+
+  /// No description provided for @qr_scan_err.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has been scanned before'**
+  String get qr_scan_err;
+
+  /// No description provided for @get_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to home'**
+  String get get_back;
 
   /// No description provided for @login_error.
   ///

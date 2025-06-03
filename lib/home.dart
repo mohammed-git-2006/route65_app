@@ -230,7 +230,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   void startAnimationsTrailFor(String cat) {
-    console.log('$cat --> \n${catsDetails.map((t) => t).join('\n')}\n===========');
     int i = 0;
     for(final animation in listItemsAnimations[cat]!) {
       animation.reset();
@@ -497,30 +496,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     SizedBox(height: 25,),
                     Text(userProfile.name!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .065),),
 
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(userProfile.phone!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
-                        Text(userProfile.location!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
-                        Text('${dic.no_orders} : ${userProfile.no_orders}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.w300, fontSize: size.width * .045)),
-                      ].map((innerWidget) {
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: GridView.count(shrinkWrap: true, physics: NeverScrollableScrollPhysics(), crossAxisCount: 2, childAspectRatio: 2.5, children: [
+                        [userProfile.location!, 'assets/map_pin.png', false],
+                        [userProfile.phone!, 'assets/telephone.png', false],
+                        ['${dic.no_orders} ${userProfile.no_orders.toString()}', 'assets/burger.png', true, false],
+                        ['${userProfile.tokens} ${(userProfile.tokens! > 10 ? dic.points_1 : dic.points_2)}', 'assets/coin.png', true, true]
+                      ].map((item) {
                         return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          margin: EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color: cs.secondary.withAlpha(50),
-                            borderRadius: BorderRadius.circular(45)
+                            color: cs.secondary.withAlpha(15),
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.grey.shade300, width: 2)
                           ),
 
-                          child: Row(spacing: 5, mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.tag, color: cs.primary,),
-                            innerWidget
-                          ],)
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                            child: Row(
+                              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              spacing: 10,
+                              children: [
+                                Image.asset(item[1] as String, width: 25,),
+                                if (item[2] as bool) Row(mainAxisSize: MainAxisSize.min, spacing: 5, children: [
+                                  Text((item[0] as String).split(' ')[0], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.bold : FontWeight.normal, fontSize: size.width * .04)),
+                                  Text((item[0] as String).split(' ')[1], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.normal : FontWeight.bold, fontSize: size.width * .04),),
+                                ],),
+
+                                if (!(item[2] as bool)) Text(item[0] as String, style: TextStyle(fontSize: size.width * .035),)
+                              ],
+                            ),
+                          ),
                         );
-                      }).toList(),
-                    ),
+                      }).toList(),),
+                    )
                   ])
                 ),
 
@@ -905,7 +916,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ),
                         width: 20,
                         height: 20,
-                        child: Center(child: Text('${myBasket.length}', style: TextStyle(color: Colors.white),)),
+                        child: Transform.translate(offset: Offset(.0, 2.5), child: Center(child: Text('${myBasket.length}', style: TextStyle(color: Colors.white),))),
                       ),
                     ),)
                   ],
@@ -922,7 +933,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
               ),
 
               GestureDetector(onTap: () {
-                Navigator.pushNamed(context, '/qr_code');
+                Navigator.pushNamed(context, '/qr_code', arguments: userProfile.phone).then((value) {
+                  print('[[QR_CODE_PAGE]] ==> got callback');
+                  loadTokensFromServer().then((_) => setState(() {}));
+                });
 
 
               }, child: FaIcon(Icons.qr_code_rounded, size:30, color: cs.primary),),

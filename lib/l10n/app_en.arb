@@ -14,7 +14,11 @@
   "code_auth_err": "Check verification code",
   "location" : "Choose area",
   "current_location" : "Delivery location to ",
-  "no_orders" : "No. orders",
+  "no_orders" : "orders",
+  "congrats" : "Congrats, you points now are -1 -2 \uD83E\uDD73",
+  "qr_scan_err" : "This code has been scanned before",
+
+  "get_back" : "Go back to home",
   "login_error" : "Problem happened while trying to login, check your connection and try again later",
   "finish" : "finish",
   "account_finished" : "Your account created successfully!",
