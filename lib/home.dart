@@ -464,14 +464,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     final isAr = Directionality.of(context) == TextDirection.rtl;
 
     return Scaffold(
-      /*appBar: AppBar(
-        centerTitle:true,
-        backgroundColor: cs.secondary,
-        title: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Text(dic.app_name, style: TextStyle(color: cs.surface, fontSize: size.width * .06),),
-        ),
-      ),*/
       body: loading ? Center(child: SizedBox(width: size.width * .5, child: lottieLib.Lottie.asset('assets/loading.json')),) : connectionError ? NoInternetPage(refreshCallback: () {
         setState(() {
           loading = true;
@@ -481,6 +473,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         loadData();
       },) : Column(
         children: [
+          if (userProfile.waiting_order) Container(
+            decoration: BoxDecoration(
+              color: cs.secondary,
+            ),
+            width: size.width,
+            padding: EdgeInsets.only(left: 10, right: 10, top: MediaQuery.of(context).padding.top+10, bottom: 10),
+            child: Text('Waiting for order'),
+          ),
           Expanded(
             child: PageView(
               physics: NeverScrollableScrollPhysics(),
@@ -566,46 +566,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         color: cs.secondary
                       ),
 
-                      /*child: SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 0),
-                          child: Column(spacing: 5, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  spacing: 10,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 25,
-                                      backgroundImage: CachedNetworkImageProvider(userProfile.pic!),
-                                    ),
-
-                                    Text(
-                                      userProfile.name!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: size.width * .035,
-                                        overflow: TextOverflow.ellipsis),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Transform.translate(offset: Offset(.0, -10 * math.sin(tokenUpAni.value * math.pi)), child: Text('${userProfile.tokens}', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
-                                    SizedBox(width: 5,),
-                                    // Image.asset('assets/token.png', color: Colors.white, colorBlendMode: BlendMode.srcIn, width: 20,),
-                                    Icon(Icons.token, color: Colors.white, size: 20,),
-                                    IconButton(icon: FaIcon(FontAwesomeIcons.refresh, color: cs.surface, size: 20,), onPressed: () {
-                                      tokenUpAni.reset();
-
-                                      loadData();
-                                    },),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ],),
-                        ),
-                      ),*/
-
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
@@ -685,43 +645,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   final pair = catsDetails[i];
                                 return Transform.translate/*Padding*/(
                                   offset: Offset(0, math.sin((pair[4] as AnimationSet).value * math.pi / 2.0) * -15),
-                                  // padding: EdgeInsets.only(bottom: ),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedCategory = pair[2];
-                                        startAnimationsTrailFor(pair[2]);
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: Material(
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            selectedCategory = pair[2];
+                                            startAnimationsTrailFor(pair[2]);
 
-                                        for(int x=0;x<catsDetails.length;++x) {
-                                          if (x != i) {
-                                            catsDetails[x][4].reset();
-                                          } else {
-                                            catsDetails[x][4].start();
-                                          }
-                                        }
-                                      });
-                                    },
-                                    child: Container(
-                                      width: size.width * .25,
-                                      height: size.width * .25,
-                                      decoration: BoxDecoration(
-                                        color: (selectedCategory == pair[2] ? cs.secondary : cs.secondary.withAlpha(50)),
-                                        borderRadius: BorderRadius.circular(15)
-                                      ),
-
-                                      child: Column(spacing: 10, mainAxisAlignment: MainAxisAlignment.center, children: [
-                                        Container(
-                                          padding: EdgeInsets.all(10),
-                                          width: size.width * .12,
-                                          height: size.width * .12,
+                                            for(int x=0;x<catsDetails.length;++x) {
+                                              if (x != i) {
+                                                catsDetails[x][4].reset();
+                                              } else {
+                                                catsDetails[x][4].start();
+                                              }
+                                            }
+                                          });
+                                        },
+                                        child: Container(
+                                          width: size.width * .25,
+                                          height: size.width * .25,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(45),
-                                            image: DecorationImage(image: menuSavedImages[pair[3]] as ImageProvider,
-                                              fit: BoxFit.cover)
+                                            color: (selectedCategory == pair[2] ? cs.secondary : cs.secondary.withAlpha(50)),
+                                            borderRadius: BorderRadius.circular(15)
                                           ),
+
+                                          child: Column(spacing: 10, mainAxisAlignment: MainAxisAlignment.center, children: [
+                                            Container(
+                                              padding: EdgeInsets.all(10),
+                                              width: size.width * .12,
+                                              height: size.width * .12,
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(45),
+                                                image: DecorationImage(image: menuSavedImages[pair[3]] as ImageProvider,
+                                                  fit: BoxFit.cover)
+                                              ),
+                                            ),
+                                            Text(pair[isAr ? 1 : 0], style: TextStyle(fontWeight: FontWeight.bold, color: selectedCategory == pair[2] ? Colors.white : cs.primary),),
+                                          ],),
                                         ),
-                                        Text(pair[isAr ? 1 : 0], style: TextStyle(fontWeight: FontWeight.bold, color: selectedCategory == pair[2] ? Colors.white : cs.primary),),
-                                      ],),
+                                      ),
                                     ),
                                   ),
                                 );
@@ -736,42 +700,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           spacing: 10,
                           children: [
                             Expanded(
-                              child: GestureDetector(
-                                onTap: () {},
-                                child: Container(
-                                  padding: EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                    color: cs.secondary.withAlpha(15),
-                                    borderRadius: BorderRadius.circular(15),
-                                    border: Border.all(color: Colors.grey.shade300, width: 1)
-                                  ),
-                                  // --BUTTON-ASSETS
-                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                    Image.asset('assets/coin.png', width: 35,),
-                                    Text('${userProfile.tokens} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: size.width * .045),),
-                                  ],),
+                              child:Container(
+                                padding: EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: cs.secondary.withAlpha(15),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(color: Colors.grey.shade300, width: 1)
                                 ),
+                                // --BUTTON-ASSETS
+                                child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                  Image.asset('assets/coin.png', width: 28,),
+                                  Transform.translate(offset: Offset(0, 3), child: Text('${userProfile.tokens} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: size.width * .045),)),
+                                ],),
                               ),
                             ),
 
-                            /*Expanded(
-                              child: GestureDetector(
-                                // BUTTON-VOUCHERS
-                                onTap: () {},
-                                child: Container(
-                                  padding: EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                      color: cs.secondary.withAlpha(15),
-                                      borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(color: Colors.grey.shade300, width: 1)
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    // BUTTON-VOUCHERS
+                                    onTap: () {
+                                      Navigator.of(context).pushNamed('/dine_room');
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.all(15),
+                                      decoration: BoxDecoration(
+                                          color: cs.secondary.withAlpha(15),
+                                          borderRadius: BorderRadius.circular(15),
+                                          border: Border.all(color: Colors.grey.shade300, width: 1),
+                                      ),
+                                      child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                        Image.asset('assets/dining-room.png', width: 35,),
+                                        Transform.translate(offset: Offset(0, 2), child: Text(dic.tables, style: TextStyle(color: cs.primary, fontSize: size.width * .045),))
+                                      ],),
+                                    ),
                                   ),
-                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                    Image.asset('assets/voucher.png', width: 35,),
-                                    Text(dic.vouchers, style: TextStyle(color: cs.primary, fontSize: size.width * .05),)
-                                  ],),
                                 ),
                               ),
-                            ),*/
+                            ),
                           ],
                         ),),
 
@@ -1001,26 +970,80 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       ],
                     ),)),
 
-                    GestureDetector(
+                    Material(
+                      child: InkWell(
+                        onTap: () async {
+                          try {
+                            final Uri url = Uri.parse('https://www.route-65-dashboard.com/api/post_order');
+                            List<Map<String, dynamic>> refinedBasket = [];
+                            for(final basketItem in myBasket) {
+                              final isMeal = basketItem['im'] as bool;
+                              refinedBasket.add({
+                                'name' : basketItem['na'],
+                                'price' : basketItem['ppi'],
+                                'quantity' : basketItem['q'],
+                                'bt' : basketItem['bt']?.toString().split('.')[0],
+                                'ft' : (isMeal) ?  basketItem['ft'].toString().split('.')[0] : null,
+                                'pt' : basketItem['pt']?.toString().split('.')[0],
+                                'notes' : basketItem['an'],
+                                'puq' : basketItem['apq'],
+                                'grams' : basketItem['g'],
+                                'cat' : basketItem['cat']
+                              });
+                            }
 
-                      child: Container(
-                        height: myBasket.isEmpty ? 0 : 50,
-                        width: size.width,
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: cs.secondary
-                        ),
+                            final body = {
+                              'name' : userProfile.name,
+                              'phone' : userProfile.phone,
+                              'basket_items' : jsonEncode(refinedBasket),
+                              'used_voucher' : usingVoucher,
+                              'voucher' : usingVoucher ? voucherController.text : null,
+                              'price_no_voucher' : totalBasketPrice,
+                              'voucher_perc' : voucherDiscountPerc,
+                              'total_price' : totalBasketPrice * (usingVoucher ? (1.0 - (voucherDiscountPerc / 100.0)) : 1.0),
+                              'location': 'Test Location',
+                            };
 
-                        child: Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: 15,
-                            children: [
-                              Text(dic.continue_, style: TextStyle(fontWeight: FontWeight.bold,
-                                  color: cs.surface, fontSize: size.width * .045),),
+                            /*final responseFromServer = await http.post(url, body: jsonEncode(body),headers: {
+                              'Content-Type': 'application/json'
+                            },);
 
-                              FaIcon(Directionality.of(context) == TextDirection.rtl ? FontAwesomeIcons.arrowLeft : FontAwesomeIcons.arrowLeft, color: cs.surface, size: 15,)
-                            ],
+                            if (responseFromServer.statusCode == 200) {
+                              userProfile.update(waiting_order: true);
+                            }*/
+
+                            Navigator.of(context).pushNamed('/confirm_order', arguments: body);
+
+                            // showDialog(context: context, builder: (context) => AlertDialog(content: Text(responseFromServer.body)));
+                          } catch (Err) {
+                            showDialog(context: context, builder: (context) => AlertDialog(content: Text('Err --> $Err')));
+                          }
+
+                          try {
+                            print('hello');
+                          } on Exception catch (e) {
+                            // TODO
+                          }
+                        },
+                        child: Container(
+                          height: myBasket.isEmpty ? 0 : 50,
+                          width: size.width,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: cs.secondary
+                          ),
+
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 15,
+                              children: [
+                                Text(dic.continue_, style: TextStyle(fontWeight: FontWeight.bold,
+                                    color: cs.surface, fontSize: size.width * .045),),
+
+                                FaIcon(Directionality.of(context) == TextDirection.rtl ? FontAwesomeIcons.arrowLeft : FontAwesomeIcons.arrowLeft, color: cs.surface, size: 15,)
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -1132,67 +1155,4 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   @override
   // TODO: implement wantKeepAlive
   bool get wantKeepAlive => true;
-}
-
-class UShapeClipper extends CustomClipper<Path> {
-  final zigZagHeight = 10.0;
-  final zigZagWidth = 50.0;
-  final minHeight = 15.0;
-  final maxHeight = 20.0;
-  @override
-  Path getClip(Size size) {
-    /*
-    final path = Path();
-    path.moveTo(0, 0);
-
-    // Top edge
-    path.lineTo(0, size.height - zigZagHeight);
-
-    // ZigZag along the bottom
-    bool isZig = true;
-    for (double x = 0; x < size.width; x += zigZagWidth) {
-      if (isZig) {
-        path.lineTo(x + zigZagWidth / 2, size.height);
-      } else {
-        path.lineTo(x + zigZagWidth / 2, size.height - zigZagHeight);
-      }
-      isZig = !isZig;
-    }
-
-    // Right side
-    path.lineTo(size.width, 0);
-    path.close();
-
-    return path;
-*/
-    final path = Path();
-    final random = Random();
-
-    path.moveTo(0, 0); // Top-left corner
-    path.lineTo(0, size.height - maxHeight); // Left side
-
-    double x = 0;
-    bool down = true;
-
-    while (x < size.width) {
-      double height = minHeight + random.nextDouble() * (maxHeight - minHeight);
-      double nextX = x + zigZagWidth;
-
-      if (nextX > size.width) nextX = size.width;
-
-      double y = down ? size.height : size.height - height;
-      path.lineTo(x + zigZagWidth / 2, y);
-
-      down = !down;
-      x = nextX;
-    }
-
-    path.lineTo(size.width, 0); // Right side
-    path.close();
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

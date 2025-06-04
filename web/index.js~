@@ -1,0 +1,9 @@
+const express = require('express');
+const path = require('path');
+const app = express();
+
+app.get('/home', (req, res) => {
+	res.status(200).sendFile(path.join(__dirname, 'index.html'));
+})
+
+app.listen('0.0.0.0', 8086)

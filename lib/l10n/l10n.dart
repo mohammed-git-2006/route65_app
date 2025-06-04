@@ -233,6 +233,54 @@ abstract class L10n {
   /// **'price after discount'**
   String get price_after_discount;
 
+  /// No description provided for @tables.
+  ///
+  /// In en, this message translates to:
+  /// **'dining room'**
+  String get tables;
+
+  /// No description provided for @occupied.
+  ///
+  /// In en, this message translates to:
+  /// **'occupied'**
+  String get occupied;
+
+  /// No description provided for @free.
+  ///
+  /// In en, this message translates to:
+  /// **'free'**
+  String get free;
+
+  /// No description provided for @confirm_order_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm order'**
+  String get confirm_order_title;
+
+  /// No description provided for @confirm_order.
+  ///
+  /// In en, this message translates to:
+  /// **'confirm order'**
+  String get confirm_order;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'name'**
+  String get name;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'phone'**
+  String get phone;
+
+  /// No description provided for @voucher.
+  ///
+  /// In en, this message translates to:
+  /// **'voucher'**
+  String get voucher;
+
   /// No description provided for @login_error.
   ///
   /// In en, this message translates to:

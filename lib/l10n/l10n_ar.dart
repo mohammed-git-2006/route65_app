@@ -78,6 +78,30 @@ class L10nAr extends L10n {
   String get price_after_discount => 'القيمة بعد الخصم';
 
   @override
+  String get tables => 'الصّالة';
+
+  @override
+  String get occupied => 'مشغولة';
+
+  @override
+  String get free => 'فارغة';
+
+  @override
+  String get confirm_order_title => 'تأكيد الطّلب';
+
+  @override
+  String get confirm_order => 'تأكيد الطّلب';
+
+  @override
+  String get name => 'الإسم';
+
+  @override
+  String get phone => 'رقم الهاتف';
+
+  @override
+  String get voucher => 'القسيمة';
+
+  @override
   String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';
 
   @override

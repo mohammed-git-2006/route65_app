@@ -753,6 +753,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                       'an' : notesController.text,
                       'g' : cat != 'Hotdog' && cat != 'Appetizers' ? grams : null,
                       'apq' : cat == 'Appetizers' ? menuItem['q'] : null,
+                      'im' : isMeal
                     });
                   },
                   child: Container(

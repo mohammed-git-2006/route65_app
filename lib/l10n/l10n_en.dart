@@ -78,6 +78,30 @@ class L10nEn extends L10n {
   String get price_after_discount => 'price after discount';
 
   @override
+  String get tables => 'dining room';
+
+  @override
+  String get occupied => 'occupied';
+
+  @override
+  String get free => 'free';
+
+  @override
+  String get confirm_order_title => 'Confirm order';
+
+  @override
+  String get confirm_order => 'confirm order';
+
+  @override
+  String get name => 'name';
+
+  @override
+  String get phone => 'phone';
+
+  @override
+  String get voucher => 'voucher';
+
+  @override
   String get login_error => 'Problem happened while trying to login, check your connection and try again later';
 
   @override

@@ -21,13 +21,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfile {
   String? name, uid, location, phone, pic, fcm;
-  bool completed = false;
+  bool completed = false, waiting_order = false;
   double? tokens;
   int? no_orders;
   List<int> liked = [];
 
   Map<String, dynamic> toJson() => {
-    'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders
+    'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders,
+    'waiting_order' : waiting_order
   };
 
   Map<String, dynamic> toJsonPref()  {
@@ -56,6 +57,7 @@ class UserProfile {
     tokens = data['tok'];
     phone = data['p'];
     completed = data['comp'];
+    completed = data['waiting_order'];
     no_orders = data['no_orders'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
     for(final item in likedPlaceholder) liked.add(int.parse('$item'));
@@ -103,7 +105,7 @@ class UserProfile {
     FirebaseFirestore.instance.collection('app-users').doc(uid).set({'fcm' : fcm}, SetOptions(merge: true));
   }
 
-  Future<void> update({String? name, String? pic, String? location, String? phone, double? tokens, int? no_orders, bool? completed}) async {
+  Future<void> update({String? name, String? pic, String? location, String? phone, double? tokens, int? no_orders, bool? completed, bool? waiting_order}) async {
     if (name != null) this.name = name;
     if (pic != null) this.pic = pic;
     if (location != null) this.location = location;
@@ -111,7 +113,7 @@ class UserProfile {
     if (tokens != null) this.tokens = tokens;
     if (completed != null) this.completed = completed;
     if (no_orders != null) this.no_orders = no_orders;
-
+    if (waiting_order != null) this.waiting_order = waiting_order;
     await saveToPref();
     await saveToCloud();
   }

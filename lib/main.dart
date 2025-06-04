@@ -8,6 +8,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:route65/auth_engine.dart';
+import 'package:route65/confirm_order.dart';
+import 'package:route65/dining_room_view.dart';
 import 'package:route65/firebase_options.dart';
 import 'package:route65/home.dart';
 import 'package:route65/l10n/animation_set.dart';
@@ -42,7 +44,7 @@ class MaterialLauncher extends StatelessWidget {
 
     final theme = ThemeData(
       colorScheme: cs,
-      textTheme: GoogleFonts.tajawalTextTheme(),
+      textTheme: GoogleFonts.cairoTextTheme(),
       /*fontFamily: 'NotoSans',
       textTheme: TextTheme(
         bodyLarge:  TextStyle(color: cs.primary),
@@ -88,7 +90,9 @@ class MaterialLauncher extends StatelessWidget {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
         '/meal_view' : (context) => MealView(),
-        '/qr_code' : (context) => QrPage()
+        '/qr_code' : (context) => QrPage(),
+        '/dine_room' : (context) => DiningRoomView(),
+        '/confirm_order' : (context) => ConfirmOrder(),
       },
       initialRoute: '/login',
       supportedLocales: L10n.supportedLocales,
@@ -304,6 +308,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         break;
       case CheckResult.ERROR:
         final size = MediaQuery.of(context).size;
+        print(result.content);
         getBottomSheet([
           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
           Text(L10n.of(context)!.login_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .05),)
@@ -526,13 +531,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             child: TextField(
                               maxLength: 8,
                               controller: p3controller,
-                              textAlignVertical: TextAlignVertical.center,
+                              textAlignVertical: TextAlignVertical.bottom,
                               keyboardType: TextInputType.number,
                               style: TextStyle(letterSpacing: 2, fontSize: size.width * .05),
                               decoration: InputDecoration(
                                 counterText: '',
                                 hintText: '...',
-                                contentPadding: EdgeInsets.only(top: 5, bottom: 5, left: 15, right: 5),
+                                contentPadding: EdgeInsets.only(top: 5, bottom: 7.5, left: 15, right: 5),
                               ),
                             ),
                           ),
