@@ -263,6 +263,78 @@ abstract class L10n {
   /// **'confirm order'**
   String get confirm_order;
 
+  /// No description provided for @error_while_pushing_order.
+  ///
+  /// In en, this message translates to:
+  /// **'error happened while sending order'**
+  String get error_while_pushing_order;
+
+  /// No description provided for @voucher_dne.
+  ///
+  /// In en, this message translates to:
+  /// **'This voucher does not exist'**
+  String get voucher_dne;
+
+  /// No description provided for @order_status_preparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order is being prepared'**
+  String get order_status_preparing;
+
+  /// No description provided for @order_status_on_road.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order is on the road!'**
+  String get order_status_on_road;
+
+  /// No description provided for @no_additional_notes.
+  ///
+  /// In en, this message translates to:
+  /// **'No additional notes'**
+  String get no_additional_notes;
+
+  /// No description provided for @jd.
+  ///
+  /// In en, this message translates to:
+  /// **'JD'**
+  String get jd;
+
+  /// No description provided for @delivery_fee.
+  ///
+  /// In en, this message translates to:
+  /// **'delivery fees'**
+  String get delivery_fee;
+
+  /// No description provided for @total_with_delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'total with delivery fees'**
+  String get total_with_delivery;
+
+  /// No description provided for @takeaway.
+  ///
+  /// In en, this message translates to:
+  /// **'take away'**
+  String get takeaway;
+
+  /// No description provided for @takeaway_ps.
+  ///
+  /// In en, this message translates to:
+  /// **'Pizza st. branch'**
+  String get takeaway_ps;
+
+  /// No description provided for @takeaway_qs.
+  ///
+  /// In en, this message translates to:
+  /// **'Arab Revolt Plaza branch'**
+  String get takeaway_qs;
+
+  /// No description provided for @delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'delivery'**
+  String get delivery;
+
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
@@ -280,6 +352,30 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'voucher'**
   String get voucher;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search locations ...'**
+  String get search;
+
+  /// No description provided for @search_r_t.
+  ///
+  /// In en, this message translates to:
+  /// **'delivery to'**
+  String get search_r_t;
+
+  /// No description provided for @close_place.
+  ///
+  /// In en, this message translates to:
+  /// **'close to ...'**
+  String get close_place;
+
+  /// No description provided for @your_order_t.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order is being prepared!'**
+  String get your_order_t;
 
   /// No description provided for @login_error.
   ///

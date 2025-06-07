@@ -93,6 +93,42 @@ class L10nEn extends L10n {
   String get confirm_order => 'confirm order';
 
   @override
+  String get error_while_pushing_order => 'error happened while sending order';
+
+  @override
+  String get voucher_dne => 'This voucher does not exist';
+
+  @override
+  String get order_status_preparing => 'Your order is being prepared';
+
+  @override
+  String get order_status_on_road => 'Your order is on the road!';
+
+  @override
+  String get no_additional_notes => 'No additional notes';
+
+  @override
+  String get jd => 'JD';
+
+  @override
+  String get delivery_fee => 'delivery fees';
+
+  @override
+  String get total_with_delivery => 'total with delivery fees';
+
+  @override
+  String get takeaway => 'take away';
+
+  @override
+  String get takeaway_ps => 'Pizza st. branch';
+
+  @override
+  String get takeaway_qs => 'Arab Revolt Plaza branch';
+
+  @override
+  String get delivery => 'delivery';
+
+  @override
   String get name => 'name';
 
   @override
@@ -100,6 +136,18 @@ class L10nEn extends L10n {
 
   @override
   String get voucher => 'voucher';
+
+  @override
+  String get search => 'Search locations ...';
+
+  @override
+  String get search_r_t => 'delivery to';
+
+  @override
+  String get close_place => 'close to ...';
+
+  @override
+  String get your_order_t => 'Your order is being prepared!';
 
   @override
   String get login_error => 'Problem happened while trying to login, check your connection and try again later';

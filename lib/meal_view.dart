@@ -75,6 +75,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
     final isAr = Directionality.of(context) == TextDirection.rtl;
     final menuItem = args['data'];
     final cat = args['category'];
+    final hasOrdered = args['waiting_order'] as bool;
     final components = args['cs'];
     final itemName = menuItem[isAr ? 'na' : 'ne'];
     final incrementalUnit = cat == 'Chicken' ? 130 : (cat == 'Beef' ? (pattyType == PattyType.NORMAL ? 50 : 100) : 0);
@@ -179,7 +180,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: Text(itemName, style: TextStyle(fontSize: size.width * .07, fontWeight: FontWeight.bold),)),
-                      Text('${(price * orderQ).toStringAsFixed(2)} JD', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
+                      Text('${(price * orderQ).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
                         textDirection: isAr ? TextDirection.ltr : TextDirection.rtl,),
                     ],
                   ),),
@@ -254,7 +255,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                       )
                                     ],
                                   ),
-                                  Text('+ 0.0 JD'),
+                                  Text('+ 0.0 ${dic.jd}'),
                                 ],),
                               ),
                             ),
@@ -303,7 +304,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                       )
                                     ],
                                   ),
-                                  Text('- 1.0 JD'),
+                                  Text('- 1.0 ${dic.jd}'),
                                 ],),
                               ),
                             ),
@@ -358,7 +359,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                     )
                                   ],
                                 ),
-                                Text('+ 0.0 JD'),
+                                Text('+ 0.0 ${dic.jd}'),
                               ],),
                             ),
                           ),
@@ -398,7 +399,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                     )
                                   ],
                                 ),
-                                Text('+ 0.5 JD'),
+                                Text('+ 0.5 ${dic.jd}'),
                               ],),
                             ),
                           ),
@@ -438,7 +439,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                     )
                                   ],
                                 ),
-                                Text('+ 0.0 JD'),
+                                Text('+ 0.0 ${dic.jd}'),
                               ],),
                             ),
                           ),
@@ -464,7 +465,6 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
 
                               GestureDetector(
                                 onTap: () => setState(() {
-
                                   if (friesType == FriesTypes.NORMAL) {
                                     isWedges.controller.reverse();
                                     isCurly.controller.reverse();
@@ -475,7 +475,6 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                     isNormalFries.start();
                                     friesType = FriesTypes.NORMAL;
                                   }
-
                                 }),
                                 child: Container(
                                   decoration: optionsDecoration,
@@ -503,7 +502,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                         )
                                       ],
                                     ),
-                                    Text('+ 0.0 JD'),
+                                    Text('+ 0.0 ${dic.jd}'),
                                   ],),
                                 ),
                               ),
@@ -547,7 +546,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                         )
                                       ],
                                     ),
-                                    Text('+ 0.5 JD'),
+                                    Text('+ 0.5 ${dic.jd}'),
                                   ],),
                                 ),
                               ),
@@ -581,9 +580,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                               color: friesType == FriesTypes.WEDGES ? cs.secondary : Colors.transparent,
                                               border: optionsDecoration.border
                                           ),
-
                                           padding: EdgeInsets.all(5),
-
                                           child: Opacity(
                                               opacity: isWedges.value,
                                               child: friesType == FriesTypes.WEDGES ? Icon(Icons.check, color: cs.surface, size: 15,) : SizedBox(width: 15, height: 15,)
@@ -591,11 +588,10 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                         )
                                       ],
                                     ),
-                                    Text('+ 0.4 JD'),
+                                    Text('+ 0.4 ${dic.jd}'),
                                   ],),
                                 ),
                               ),
-
                               SizedBox(width: 15,),
                             ],
                           ),
@@ -656,51 +652,6 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                           ],),
                         ),
                       ),
-
-                      /*SizedBox(
-                        height: 40,
-                        child: Row(textDirection: TextDirection.ltr, children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (grams != minGrams) {
-
-                              }
-                            },
-                            child: Container(padding: EdgeInsets.symmetric(horizontal: 15),
-                            decoration: BoxDecoration(
-                              color: cs.secondary.withAlpha(50),
-                              borderRadius: BorderRadius.only(topLeft: Radius.circular(45), bottomLeft: Radius.circular(45)),
-                            ),child: Container(
-                              margin: EdgeInsets.only(bottom: 4),
-                              child: Text('-', style: TextStyle(fontSize: size.width * .05, color: grams == minGrams ? Colors.grey.shade800 : Colors.black))
-                            ),),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: cs.secondary.withAlpha(25),
-                            ),
-
-                            child: Text('$grams'),
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                grams += incrementalUnit;
-                              });
-                            },
-                            child: Container(padding: EdgeInsets.symmetric(horizontal: 15),
-                              decoration: BoxDecoration(
-                                color: cs.secondary.withAlpha(50),
-                                borderRadius: BorderRadius.only(topRight: Radius.circular(45), bottomRight: Radius.circular(45)),
-                              ),child: Container(
-                                  margin: EdgeInsets.only(bottom: 4),
-                                  child: Text('+', style: TextStyle(fontSize: size.width * .05, color: grams == minGrams ? Colors.grey.shade800 : Colors.black))
-                              ),
-                            ),
-                          ),
-                        ],),
-                      )*/
                     ],
                   ),),
 
@@ -731,7 +682,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
             ),
           ),
 
-          Container(
+          if(!hasOrdered) Container(
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 15, top: 15, left: 20, right: 20),
             decoration: BoxDecoration(
               color: cs.surface,

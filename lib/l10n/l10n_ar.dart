@@ -93,6 +93,42 @@ class L10nAr extends L10n {
   String get confirm_order => 'تأكيد الطّلب';
 
   @override
+  String get error_while_pushing_order => 'حدث خطأ أثناء تقديم الطّلب';
+
+  @override
+  String get voucher_dne => 'هذه القسيمة غير موجودة';
+
+  @override
+  String get order_status_preparing => 'يتم تحضير طلبك';
+
+  @override
+  String get order_status_on_road => 'طلبك عالطّريق';
+
+  @override
+  String get no_additional_notes => 'لا توجد ملاحظات إضافية';
+
+  @override
+  String get jd => 'د.أ.';
+
+  @override
+  String get delivery_fee => 'رسوم التّوصيل';
+
+  @override
+  String get total_with_delivery => 'المجموع مع رسوم التّوصيل';
+
+  @override
+  String get takeaway => 'إستلام من المطعم';
+
+  @override
+  String get takeaway_ps => 'فرع شارع البيتزا';
+
+  @override
+  String get takeaway_qs => 'فرع القلعة';
+
+  @override
+  String get delivery => 'توصيل';
+
+  @override
   String get name => 'الإسم';
 
   @override
@@ -100,6 +136,18 @@ class L10nAr extends L10n {
 
   @override
   String get voucher => 'القسيمة';
+
+  @override
+  String get search => 'موقع التّوصيل ...';
+
+  @override
+  String get search_r_t => 'التّوصيل إلى';
+
+  @override
+  String get close_place => 'قريب ل ...';
+
+  @override
+  String get your_order_t => 'طلبك قيد التّحضير!';
 
   @override
   String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';

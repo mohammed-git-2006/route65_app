@@ -36,22 +36,14 @@ class MaterialLauncher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = ColorScheme.light(
-      // surface: Color(0xffededfa),
       surface: Colors.white,
       secondary: Color(0xFF0C8A5E),
-      primary: Colors.black// Color(0xff241e20),
+      primary: Colors.black
     );
 
     final theme = ThemeData(
       colorScheme: cs,
-      textTheme: GoogleFonts.cairoTextTheme(),
-      /*fontFamily: 'NotoSans',
-      textTheme: TextTheme(
-        bodyLarge:  TextStyle(color: cs.primary),
-        bodyMedium: TextStyle(color: cs.primary),
-        titleLarge: TextStyle(color: cs.primary),
-      ),*/
-
+      textTheme: GoogleFonts.notoSansTextTheme(),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
@@ -140,6 +132,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     authEng.checkLogin().then((result) {
       if (result.status == CheckResult.FIRST_TIME) {
+        print('FIRST_TIME cause is ${result.content}');
         p2NameController.text = authEng.userProfile.name ?? '';
         p2NameHolder = p2NameController.text;
         pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
@@ -148,6 +141,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         disposeAnimations();
         Navigator.popAndPushNamed(context, '/home');
       } else {
+        print('## Got CheckResult.ERROR ${result.status} -- ${result.content}');
         titleAnimation.start();
       }
     });
@@ -438,6 +432,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   )),
                 ),
 
+                // Text('${authEng.userProfile.toJson()}'),
+
                 Opacity(opacity: p2Name.value, child: Text(p2NameHolder, style: TextStyle(fontSize: size.width * .05, fontWeight: FontWeight.bold),))
               ],
 
@@ -561,12 +557,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                   child: Icon(Icons.chevron_left),
                 ) ,
+                // Text('$phoneComplete'),
                 Expanded(
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(disabledBackgroundColor: Colors.grey.shade300),
                     onPressed: !phoneComplete ? null : () {
                       setState(() {
                         phoneComplete = false;
                       });
+
+                      // showDialog(context: context, builder: (context) {
+                      //   return AlertDialog(content:Text('checking, button should be disabled'));
+                      // });
 
                       p3controller.text = p3controller.text.split('').map((char) => PhoneNumberFormatter.mapping.keys.contains(char) ? PhoneNumberFormatter.mapping[char] : char).toList().join('');
 
@@ -723,6 +725,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                         getBottomSheet([
                           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
+                          Text('$err'),
                           Text(dic.code_auth_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
                         ],);
                       }

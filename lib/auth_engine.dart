@@ -20,7 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class UserProfile {
-  String? name, uid, location, phone, pic, fcm;
+  String? name, uid, location, phone, pic, fcm, coc;
   bool completed = false, waiting_order = false;
   double? tokens;
   int? no_orders;
@@ -28,7 +28,7 @@ class UserProfile {
 
   Map<String, dynamic> toJson() => {
     'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders,
-    'waiting_order' : waiting_order
+    'waiting_order' : waiting_order, 'coc' : coc
   };
 
   Map<String, dynamic> toJsonPref()  {
@@ -57,8 +57,9 @@ class UserProfile {
     tokens = data['tok'];
     phone = data['p'];
     completed = data['comp'];
-    completed = data['waiting_order'];
+    waiting_order = data['waiting_order'];
     no_orders = data['no_orders'];
+    coc = data['coc'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
     for(final item in likedPlaceholder) liked.add(int.parse('$item'));
     if(pref != null && pref) uid = data['uid'];
@@ -105,7 +106,16 @@ class UserProfile {
     FirebaseFirestore.instance.collection('app-users').doc(uid).set({'fcm' : fcm}, SetOptions(merge: true));
   }
 
-  Future<void> update({String? name, String? pic, String? location, String? phone, double? tokens, int? no_orders, bool? completed, bool? waiting_order}) async {
+  Future<void> update({
+    String? name,
+    String? pic,
+    String? location,
+    String? phone,
+    String? coc,
+    double? tokens,
+    int? no_orders,
+    bool? completed,
+    bool? waiting_order}) async {
     if (name != null) this.name = name;
     if (pic != null) this.pic = pic;
     if (location != null) this.location = location;
@@ -114,6 +124,7 @@ class UserProfile {
     if (completed != null) this.completed = completed;
     if (no_orders != null) this.no_orders = no_orders;
     if (waiting_order != null) this.waiting_order = waiting_order;
+    if (coc != null) this.coc = coc;
     await saveToPref();
     await saveToCloud();
   }
@@ -150,9 +161,11 @@ class AuthEngine {
       }
 
       await userProfile.loadFromPref();
+      // userProfile.update(completed: true);
 
-      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, 'DONE');
+      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, 'IF FIRST_TIME user profile value for completed is false ${userProfile.completed}');
     } catch (err) {
+      print('ERROR ---> $err');
       return AuthResult(CheckResult.ERROR, '${err}');
     }
   }
@@ -200,6 +213,9 @@ class AuthEngine {
     }
   }
 
+  static String appChannelId    = 'route_65_channel',
+                appChannelName  = 'Route 65 App Channel';
+
 
   static void showLocalNotification(RemoteMessage message) async {
     final path = await getApplicationDocumentsDirectory();
@@ -220,6 +236,7 @@ class AuthEngine {
     } finally {}
 
     AndroidNotificationDetails? androidDetails;
+    DarwinNotificationDetails? iosDetails;
     try {
       File saveFile = File('${path.path}/notifications_primary.jgp');
       if(true){
@@ -228,8 +245,8 @@ class AuthEngine {
         await saveFile.writeAsBytes(imageResponse.bodyBytes);
 
         androidDetails = AndroidNotificationDetails(
-            'channel_id',
-            'channel_name',
+            appChannelId,
+            appChannelName,
             channelDescription: 'your channel description',
             importance: Importance.max,
             priority: Priority.high,
@@ -239,12 +256,16 @@ class AuthEngine {
               largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
             )
         );
+
+        iosDetails = DarwinNotificationDetails(
+
+        );
       }
     } catch (e) {
       console.log('creating normal notification without image --> ${e}');
       androidDetails = AndroidNotificationDetails(
-          'channel_id',
-          'channel_name',
+          appChannelId,
+          appChannelName,
           channelDescription: 'your channel description',
           importance: Importance.max,
           priority: Priority.high,

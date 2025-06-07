@@ -7,13 +7,13 @@ class LocationsViewPage extends StatefulWidget {
   const LocationsViewPage({super.key});
 
   @override
-  State<LocationsViewPage> createState() => _LocationsViewPageState();
+  State<LocationsViewPage> createState() => LocationsViewPageState();
 }
 
-class _LocationsViewPageState extends State<LocationsViewPage> {
-  final map65MainBranch = LatLng(29.5218664,34.999778), map65OtherBranch = LatLng(29.5322255,35.0038199);
+class LocationsViewPageState extends State<LocationsViewPage> {
+  static final map65OtherBranch = LatLng(29.5218664,34.999778), map65MainBranch = LatLng(29.5322255,35.0038199);
 
-  get map65MidPoint {
+  static get map65MidPoint {
     return LatLng(
       (map65MainBranch.latitude  + map65OtherBranch.latitude ) / 2.0,
       (map65MainBranch.longitude + map65OtherBranch.longitude) / 2.0,

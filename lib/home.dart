@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -100,16 +101,40 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   List<String> menuCats = [];
   Map<String, FileImage> menuSavedImages = {};
   List<Map<String, dynamic>> myBasket = [];
+  List<dynamic> fromServerBasket = [];
   List<dynamic> catsDetails = [];
   TextEditingController voucherController = TextEditingController();
   double voucherDiscountPerc = .0;
+  late double fromServerTotalPrice;
+  late bool fromServerIsTakeaway;
+  late String fromServerLocation, fromServerClosePlace, fromServerTakeawayLocation;
 
-  void loadData() async {
+  Future<void> loadData() async {
     await userProfile.loadFromPref();
     setupNotifications();
     final lr = await loadTokensFromServer();
 
     try {
+      print('[#]    COC --> ${userProfile.coc}');
+
+      if (userProfile.waiting_order) {
+        final Uri fsbUri = Uri.parse('https://www.route-65-dashboard.com/api/order_items/${userProfile.coc}');
+        final fsbResponse = await http.get(fsbUri);
+        fromServerBasket = jsonDecode(fsbResponse.body)['items'] as List<dynamic>;
+        // fromServerTotalPrice = jsonDecode(fsbResponse.body)['total_price'] as double;
+        final _data = jsonDecode(fsbResponse.body) as Map<String, dynamic>;
+        fromServerTotalPrice = _data['total_price']*1.0;
+        fromServerIsTakeaway = (_data['order_method'] as String) == 'Take away';
+        if (!fromServerIsTakeaway) {
+          fromServerLocation = _data['location'] as String;
+          fromServerClosePlace = _data['close_place'] as String;
+        } else {
+          fromServerTakeawayLocation = _data['takeaway_place'] as String;
+        }
+
+        runBackgroundOrderCheck();
+      }
+
       final Uri url = Uri(host: 'www.route-65-dashboard.com', scheme: 'https', path: '/api/banner');
       final bannersResponse = await http.get(url);
       final jsonData = jsonDecode(bannersResponse.body) as Map<String, dynamic>;
@@ -131,8 +156,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final catsInfoDecoded = jsonDecode(catsInfoResponse.body);
       catsDetails = List.generate(catsDecoded.length, (i) => [...catsInfoDecoded[i], new AnimationSet()..init(this, .0, 1.0, Durations.medium1, Curves.easeIn)]);
       loadAllAnimationsForMenuItems();
-    } catch (err) {
-      console.log('[Connection check][1] $err');
+    } catch (err, trace) {
+      console.log('[Connection check][1] $err $trace');
       connectionError = true;
     }
 
@@ -168,8 +193,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
       File languageFile = File('${path.path}/language.config');
       await languageFile.writeAsString(Localizations.localeOf(context).languageCode);
-    } on Exception catch (e) {
-      console.log('error $e');
+    } on Exception catch (e, trace) {
+      console.log('error $e $trace');
       setState(() {
         loading = false;
         connectionError = true;
@@ -391,7 +416,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         spacing: 5,
                         mainAxisAlignment:MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('${menuItem['p']} JD', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
+                          Text('${menuItem['p']} ${L10n.of(context)!.jd}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
                           Row(children: [
                             SizedBox(
                               width: 30,
@@ -405,7 +430,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     'data' : menuItem,
                                     'image_provider' : menuSavedImages[menuItem['i']],
                                     'category' : category,
-                                    'cs' : menuData['cs']
+                                    'cs' : menuData['cs'],
+                                    'waiting_order' : userProfile.waiting_order,
                                   }) as Map<String, dynamic>;
 
                                   if (pushResult.containsKey('ordered')) {
@@ -455,6 +481,50 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     return price;
   }
 
+  late Timer? timer;
+
+  void checkingOrderStatusErrCallback(String msg) {
+    /*showDialog(context: context, builder: (context) {
+      return AlertDialog(content: Text('CHECKING_ORDER_ERR_CB --> $msg'));
+    });
+
+    timer?.cancel();*/
+  }
+
+  String currentOrderStatus = '';
+
+  void runBackgroundOrderCheck() {
+    final Uri checkingUrl = Uri.parse('https://www.route-65-dashboard.com/api/order_status');
+
+    timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Updating'), duration: Duration(seconds: 1),));
+      if (userProfile.waiting_order) {
+        final key = userProfile.coc;
+        final body = {
+          'key' : key
+        };
+
+        http.post(checkingUrl, body: body).then((response) {
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+            if (data['server_err'] as bool) {
+              checkingOrderStatusErrCallback('L1');
+            } else {
+              setState(() {
+                currentOrderStatus = data['status'] as String;
+              });
+            }
+          } else {
+            checkingOrderStatusErrCallback('L2 --> ${response.body}');
+          }
+        }).onError((err, s) {
+          checkingOrderStatusErrCallback('$err');
+        });
+      }
+    },);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -475,11 +545,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         children: [
           if (userProfile.waiting_order) Container(
             decoration: BoxDecoration(
-              color: cs.secondary,
+              color: cs.secondary.withAlpha(50),
+              border: Border.all(color: Colors.grey.shade400),
+              // borderRadius: BorderRadius.circular(5)
             ),
             width: size.width,
-            padding: EdgeInsets.only(left: 10, right: 10, top: MediaQuery.of(context).padding.top+10, bottom: 10),
-            child: Text('Waiting for order'),
+            padding: EdgeInsets.only(left:10, right:10, top:MediaQuery.of(context).padding.top, bottom:15),
+            // margin: EdgeInsets.only(left: 10, right: 10, bottom: 0),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.center, spacing: 5, children: [
+              Text(currentOrderStatus == 'PREP' ? dic.order_status_preparing : dic.order_status_on_road),
+              SizedBox(width:10),
+              Transform.scale(
+                scale: currentOrderStatus == 'PREP' ? 1.75 : 2,
+                child: lottieLib.Lottie.asset(
+                  currentOrderStatus == 'PREP' ? 'assets/preparing.json' : 'assets/delivering.json', height: 35
+                )
+              ),
+            ],),
           ),
           Expanded(
             child: PageView(
@@ -561,7 +643,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     // --APP-BAR
                     Container(
                       width: size.width,
-                      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 5, right: 5, bottom: 10),
+                      padding: EdgeInsets.only(top: !userProfile.waiting_order ? MediaQuery.of(context).padding.top : 10, left: 5, right: 5, bottom: 10),
                       decoration: BoxDecoration(
                         color: cs.secondary
                       ),
@@ -769,7 +851,96 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 // --PAGE-BASKET
                 Container(
                   margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  child: userProfile.waiting_order ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              Text('${fromServerTotalPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.secondary),),
+                              SizedBox(width: 20),
+                              FaIcon(FontAwesomeIcons.clock, color: cs.secondary)
+                            ],
+                          ),
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            spacing: 10,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(fromServerIsTakeaway ? dic.takeaway : dic.delivery, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.primary),),
+                              Transform.translate(
+                                offset: Offset(.0, 3),
+                                  child: FaIcon(fromServerIsTakeaway ? Icons.takeout_dining_outlined : Icons.delivery_dining_outlined, color: cs.primary, size:22)),
+                              Transform.translate(
+                                offset: Offset(.0, 2.5),
+                                child: Text(fromServerIsTakeaway ? fromServerTakeawayLocation : '$fromServerLocation ($fromServerClosePlace)'))
+                            ],
+                          )
+                        ),
+
+                        ElevatedButton(
+                          child: Text('Reset'),
+                          onPressed : () {
+                            userProfile.update(waiting_order: false, coc: null);
+                            setState(() {
+
+                            });
+                          }
+                        ),
+
+                        Divider(color: Colors.grey.shade400, thickness: 2,),
+                        SizedBox(height: 10,),
+
+                        ...fromServerBasket.map((basketItem) {
+
+                          return Container(
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300, width: 1),
+                                borderRadius: BorderRadius.circular(15),
+                                color: cs.surface
+                            ),
+
+                            margin: EdgeInsets.symmetric(vertical: 5),
+                            padding: EdgeInsets.all(10),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
+                              Padding(padding: EdgeInsets.all(5), child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      spacing: 5,
+                                      children: [
+                                        Text('${basketItem[isAr ? 'name' : 'name_english']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, overflow: TextOverflow.ellipsis),),
+                                        Text('x${basketItem['quantity']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color:cs.secondary),
+                                          textDirection: Directionality.of(context) == TextDirection.rtl ? TextDirection.ltr : TextDirection.rtl,),
+                                      ],
+                                    ),
+
+                                    Text((basketItem['notes'] as String).trim().isEmpty ? dic.no_additional_notes : basketItem['notes'], style: TextStyle(fontSize: 16, color: Colors.grey.shade800, fontStyle: FontStyle.italic),)
+                                  ],
+                                ),
+                              ),),
+
+
+                              // SizedBox(height: 10,),
+
+                              // if (basketItem['bt'] != null) basketViewLineWidget(dic.bv_bt, breadName(dic, basketItem['bt']), '🍞'),
+                              // if (basketItem['pt'] != null) basketViewLineWidget(dic.bv_pt, pattyName(dic, basketItem['pt']), '🍔'),
+                              // if (basketItem['ft'] != null) basketViewLineWidget(dic.bv_ft, friesName(dic, basketItem['ft']), '🍟'),
+                              // if (basketItem['g']  != null) Text('${basketItem['g']} ${dic.gram} '),
+                              // if (basketItem['cat'] == 'Appetizers' && basketItem['q'] != 1) Text('${basketItem['apq']} x ${basketItem['q']} = ${basketItem['apq'] * basketItem['q']} ${basketItem['apq'] * basketItem['q'] < 10 ? dic.piece : isAr ? 'قطعة' : dic.piece}', textDirection: TextDirection.ltr,)
+                            ],),
+                          );
+                        })
+                      ],
+                    ),
+                  ) : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     SizedBox(height: 8,),
                     Padding(
                       padding: const EdgeInsets.all(15.0).copyWith(top: 0),
@@ -810,7 +981,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           )
                         ],
                       )
-                    ),) : Expanded(child: SingleChildScrollView(child: Column(
+                    ),) :  Expanded(child: SingleChildScrollView(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 20,
                       children: [
@@ -887,7 +1058,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   Image.asset('assets/voucher.png', height: 20,),
                                   Expanded(
                                     child: TextField(
-                                      textAlignVertical: TextAlignVertical.bottom,
+                                      textAlignVertical: TextAlignVertical.center,
                                       controller: voucherController,
                                       decoration: InputDecoration(
                                         filled: false,
@@ -902,14 +1073,66 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                       setState(() {
                                         checkingVoucher = true;
                                         usingVoucher = false;
-                                        Future.delayed(Duration(seconds: 1)).then((_) {
+                                        /*Future.delayed(Duration(seconds: 1)).then((_) {
                                           setState(() {
                                             voucherDiscountPerc = 10;
                                             usingVoucher = true;
                                             checkingVoucher = false;
                                           });
-                                        });
+                                        });*/
                                       });
+
+                                      final Uri url = Uri.parse('https://www.route-65-dashboard.com/api/voucher');
+                                      http.post(url, body: {
+                                        'code' : voucherController.text
+                                      }).then((response) {
+                                        print(response.body);
+                                        try {
+                                          final body = jsonDecode(response.body);
+                                          print(body);
+                                          if (body['err']) {
+                                            setState(() {
+                                              voucherDiscountPerc = 0;
+                                              usingVoucher = false;
+                                              checkingVoucher = false;
+                                            });
+
+                                            showDialog(context: context, builder: (context) => AlertDialog(content: Text(dic.voucher_dne, style: TextStyle(color: Colors.red.shade800),),));
+                                          } else {
+                                            if (body['exists']) {
+                                              setState(() {
+                                                usingVoucher = true;
+                                                checkingVoucher = false;
+                                                voucherDiscountPerc = body['perc'] * 100.0;
+                                              });
+                                            } else {
+                                              setState(() {
+                                                voucherDiscountPerc = 0;
+                                                usingVoucher = false;
+                                                checkingVoucher = false;
+                                              });
+
+                                              showDialog(context: context, builder: (context) => AlertDialog(content: Text(dic.voucher_dne, style: TextStyle(color: Colors.red.shade800)),));
+                                            }
+                                          }
+                                        } catch (err) {
+                                          setState(() {
+                                            voucherDiscountPerc = 0;
+                                            usingVoucher = false;
+                                            checkingVoucher = false;
+                                          });
+
+                                          showDialog(context: context, builder: (context) => AlertDialog(content: Text(dic.voucher_dne, style: TextStyle(color: Colors.red.shade800)),));
+                                        }
+                                      }).onError((error, stackTrace) {
+                                        setState(() {
+                                          voucherDiscountPerc = 0;
+                                          usingVoucher = false;
+                                          checkingVoucher = false;
+                                        });
+
+                                        showDialog(context: context, builder: (context) => AlertDialog(content: Text(dic.voucher_dne, style: TextStyle(color: Colors.red.shade800)),));
+                                      },);
                                     },
                                     child: Transform.translate(offset: Offset(0, 2), child:
                                       Text(
@@ -924,6 +1147,40 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 ],
                               ),
                             ),
+                          ),
+                        ),
+
+                        if (usingVoucher) Container(
+                          decoration: BoxDecoration(
+                            color: cs.secondary.withAlpha(50),
+                            borderRadius: BorderRadius.circular(7)
+                          ),
+                          height: 50,
+                          margin: EdgeInsets.symmetric(horizontal: 10),
+                          padding: EdgeInsets.all(10),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  spacing: 15,
+                                  children: [
+                                    Text(voucherController.text, style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary),),
+                                    Text('$voucherDiscountPerc %', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
+                                    FaIcon(FontAwesomeIcons.receipt, color: cs.secondary, size:20)
+                                  ],
+                                ),
+                              ),
+
+                              Positioned(right: 5, top: 0, bottom: 0,
+                                width:20, child: GestureDetector(child: Icon(Icons.close, color: cs.secondary, fill: .5,), onTap: () {
+                                  setState(() {
+                                    usingVoucher = false;
+                                    voucherController.clear();
+                                    voucherDiscountPerc = 0;
+                                  });
+                                },),),
+                            ],
                           ),
                         ),
 
@@ -974,17 +1231,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       child: InkWell(
                         onTap: () async {
                           try {
-                            final Uri url = Uri.parse('https://www.route-65-dashboard.com/api/post_order');
                             List<Map<String, dynamic>> refinedBasket = [];
                             for(final basketItem in myBasket) {
+                              // throw basketItem['pt'].toString().split('.')[1];
                               final isMeal = basketItem['im'] as bool;
                               refinedBasket.add({
                                 'name' : basketItem['na'],
+                                'name_english' : basketItem['ne'],
                                 'price' : basketItem['ppi'],
                                 'quantity' : basketItem['q'],
-                                'bt' : basketItem['bt']?.toString().split('.')[0],
-                                'ft' : (isMeal) ?  basketItem['ft'].toString().split('.')[0] : null,
-                                'pt' : basketItem['pt']?.toString().split('.')[0],
+                                'bt' : basketItem['bt']?.toString().split('.')[1],
+                                'ft' : basketItem['ft']?.toString().split('.')[1],
+                                'pt' : basketItem['pt']?.toString().split('.')[1],
                                 'notes' : basketItem['an'],
                                 'puq' : basketItem['apq'],
                                 'grams' : basketItem['g'],
@@ -1001,28 +1259,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               'price_no_voucher' : totalBasketPrice,
                               'voucher_perc' : voucherDiscountPerc,
                               'total_price' : totalBasketPrice * (usingVoucher ? (1.0 - (voucherDiscountPerc / 100.0)) : 1.0),
-                              'location': 'Test Location',
                             };
 
-                            /*final responseFromServer = await http.post(url, body: jsonEncode(body),headers: {
-                              'Content-Type': 'application/json'
-                            },);
-
-                            if (responseFromServer.statusCode == 200) {
-                              userProfile.update(waiting_order: true);
-                            }*/
-
-                            Navigator.of(context).pushNamed('/confirm_order', arguments: body);
-
-                            // showDialog(context: context, builder: (context) => AlertDialog(content: Text(responseFromServer.body)));
+                            Navigator.of(context).pushNamed('/confirm_order', arguments: body).then((r) {
+                              if (r != null) {
+                                setState(() {
+                                  userProfile.update(waiting_order: true, coc: r as String);
+                                  setState(() {
+                                    loading = true;
+                                  });
+                                  loadData().then((_) {
+                                    currentPage = 3;
+                                  });
+                                });
+                              }
+                            });
                           } catch (Err) {
                             showDialog(context: context, builder: (context) => AlertDialog(content: Text('Err --> $Err')));
-                          }
-
-                          try {
-                            print('hello');
-                          } on Exception catch (e) {
-                            // TODO
                           }
                         },
                         child: Container(
@@ -1036,12 +1289,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           child: Center(
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               spacing: 15,
                               children: [
                                 Text(dic.continue_, style: TextStyle(fontWeight: FontWeight.bold,
-                                    color: cs.surface, fontSize: size.width * .045),),
+                                    color: cs.surface, fontSize: 15),),
 
-                                FaIcon(Directionality.of(context) == TextDirection.rtl ? FontAwesomeIcons.arrowLeft : FontAwesomeIcons.arrowLeft, color: cs.surface, size: 15,)
+                                FaIcon(Directionality.of(context) == TextDirection.rtl ? FontAwesomeIcons.arrowLeft : FontAwesomeIcons.arrowRight, color: cs.surface, size: 15,)
                               ],
                             ),
                           ),
@@ -1090,7 +1344,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         ),
                         width: 20,
                         height: 20,
-                        child: Transform.translate(offset: Offset(.0, 2.5), child: Center(child: Text('${myBasket.length}', style: TextStyle(color: Colors.white),))),
+                        child: Transform.translate(offset: Offset(.0, .0), child: Center(child: Text('${userProfile.waiting_order ? fromServerBasket.length : myBasket.length}', style: TextStyle(color: Colors.white),))),
                       ),
                     ),)
                   ],
@@ -1149,6 +1403,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   @override
   void dispose() {
     ChatBotPage.endSession(userProfile);
+    timer?.cancel();
     super.dispose();
   }
 
