@@ -20,15 +20,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class UserProfile {
+  /// USER-PROF-VARS
   String? name, uid, location, phone, pic, fcm, coc;
-  bool completed = false, waiting_order = false;
+  bool? completed = false, waiting_order = false;
   double? tokens;
   int? no_orders;
   List<int> liked = [];
+  List<String> selfVouchers = [];
+
+  /*
+  * When ever you want to add a firestore value for the user profile that is readable from the shared_preferences and firestore, you should add them in the VARS-area
+  * and then to the toJson(), and then to the fromJson()
+  * */
 
   Map<String, dynamic> toJson() => {
     'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders,
-    'waiting_order' : waiting_order, 'coc' : coc
+    'waiting_order' : waiting_order, 'coc' : coc, 'self-vouchers' : selfVouchers
   };
 
   Map<String, dynamic> toJsonPref()  {
@@ -61,6 +68,8 @@ class UserProfile {
     no_orders = data['no_orders'];
     coc = data['coc'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
+    final selfVouchersPlaceholder = data['self-vouchers'] as List<dynamic>;
+    selfVouchersPlaceholder.map((e) => selfVouchers.add(e));
     for(final item in likedPlaceholder) liked.add(int.parse('$item'));
     if(pref != null && pref) uid = data['uid'];
   }
@@ -91,12 +100,43 @@ class UserProfile {
     fromJson(data: data, pref: true);
   }
 
+  /*
+   * a tailor-made simple function to update the self-vouchers on the firestore-client side, whether remove or add, it's called from [addSelfVoucher, removeVoucher]
+   */
+  Future<void> updateVouchersInCloud() async {
+    await FirebaseFirestore.instance.collection('app-users').doc(uid).set({'self-vouchers' : selfVouchers}, SetOptions(merge: true));
+  }
+
+  /*
+   * if the selfVouchers already contains the voucher return (this case is simply impossible, but why not), else add it to the string list and then call (updateVouchersInCloud)
+   */
+  Future<void> addSelfVoucher(String voucher) async {
+    if (selfVouchers.contains(voucher)) return;
+    selfVouchers.add(voucher);
+    updateVouchersInCloud();
+  }
+
+  /*
+  * if the vouchers are empty (which is also semi-impossible case) return, else search and remove, then call db-update
+  * */
+  Future<void> removeVoucher(String voucher) async {
+    if (selfVouchers.isEmpty) return;
+    selfVouchers.remove(voucher);
+    updateVouchersInCloud();
+  }
+
+  /*
+  * takes the json format of all the user data [toJson()] (with out updating the FCM since the fcm automatically updates on each launch) and then merge all the changes
+  * */
   Future<void> saveToCloud() async {
     final uploadData = toJson();
     uploadData.remove('fcm');
     FirebaseFirestore.instance.collection('app-users').doc(uid).set(uploadData, SetOptions(merge: true));
   }
 
+  /*
+   * get all the data for the user using the user id from the firestore side, then fill the data in the class using the method fromJson()
+   */
   Future<void> fromCloud() async {
     final cloudData = await FirebaseFirestore.instance.collection('app-users').doc(uid!).get();
     fromJson(data: cloudData.data()!, pref: false);
@@ -115,15 +155,18 @@ class UserProfile {
     double? tokens,
     int? no_orders,
     bool? completed,
-    bool? waiting_order}) async {
-    if (name != null) this.name = name;
-    if (pic != null) this.pic = pic;
-    if (location != null) this.location = location;
-    if (phone != null) this.phone = phone;
-    if (tokens != null) this.tokens = tokens;
-    if (completed != null) this.completed = completed;
-    if (no_orders != null) this.no_orders = no_orders;
-    if (waiting_order != null) this.waiting_order = waiting_order;
+    bool? waiting_order,
+    bool? mergeNull
+  }) async {
+    final mN = mergeNull ?? false;
+    if (name          != null || mN) this.name = name;
+    if (pic           != null || mN) this.pic = pic;
+    if (location      != null || mN) this.location = location;
+    if (phone         != null || mN) this.phone = phone;
+    if (tokens        != null || mN) this.tokens = tokens;
+    if (completed     != null || mN) this.completed = completed;
+    if (no_orders     != null || mN) this.no_orders = no_orders;
+    if (waiting_order != null || mN) this.waiting_order = waiting_order;
     if (coc != null) this.coc = coc;
     await saveToPref();
     await saveToCloud();
@@ -163,7 +206,7 @@ class AuthEngine {
       await userProfile.loadFromPref();
       // userProfile.update(completed: true);
 
-      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, 'IF FIRST_TIME user profile value for completed is false ${userProfile.completed}');
+      return AuthResult(userProfile.completed! ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, 'IF FIRST_TIME user profile value for completed is false ${userProfile.completed}');
     } catch (err) {
       print('ERROR ---> $err');
       return AuthResult(CheckResult.ERROR, '${err}');
@@ -207,7 +250,7 @@ class AuthEngine {
       }
 
       await userProfile.fromCloud();
-      return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '$signInResult');
+      return AuthResult(userProfile.completed! ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '$signInResult');
     } catch(err) {
       return AuthResult(CheckResult.ERROR, '$err');
     }
@@ -232,35 +275,34 @@ class AuthEngine {
       }
 
       File langFile = File('${path.path}/language.config');
-      lang = await langFile.readAsString();
+      lang = (await langFile.readAsString()).toUpperCase();
     } finally {}
 
     AndroidNotificationDetails? androidDetails;
     DarwinNotificationDetails? iosDetails;
     try {
       File saveFile = File('${path.path}/notifications_primary.jgp');
-      if(true){
-        final Uri imageUrl = Uri.parse(message.notification!.android!.imageUrl!);
-        final imageResponse = await http.get(imageUrl);
-        await saveFile.writeAsBytes(imageResponse.bodyBytes);
 
-        androidDetails = AndroidNotificationDetails(
-            appChannelId,
-            appChannelName,
-            channelDescription: 'your channel description',
-            importance: Importance.max,
-            priority: Priority.high,
-            showWhen: true,
-            styleInformation: BigPictureStyleInformation(
-              FilePathAndroidBitmap('${path.path}/notifications_primary.jgp'),
-              largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
-            )
-        );
+      final Uri imageUrl = Uri.parse(message.notification!.android!.imageUrl!);
+      final imageResponse = await http.get(imageUrl);
+      await saveFile.writeAsBytes(imageResponse.bodyBytes);
 
-        iosDetails = DarwinNotificationDetails(
+      androidDetails = AndroidNotificationDetails(
+          appChannelId,
+          appChannelName,
+          channelDescription: 'your channel description',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+          styleInformation: BigPictureStyleInformation(
+            FilePathAndroidBitmap('${path.path}/notifications_primary.jgp'),
+            largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
+          )
+      );
 
-        );
-      }
+      iosDetails = DarwinNotificationDetails(
+
+      );
     } catch (e) {
       console.log('creating normal notification without image --> ${e}');
       androidDetails = AndroidNotificationDetails(
@@ -278,11 +320,12 @@ class AuthEngine {
 
     titles = jsonDecode(message.notification!.title!);
     bodies = jsonDecode(message.notification!.body!);
+    final langIndex = lang == 'AR' ? 1 : 0;
 
     FlutterLocalNotificationsPlugin().show(
       message.notification.hashCode,
-      titles[lang == 'ar' ? 1 : 0],
-      bodies[lang == 'ar' ? 1 : 0],
+      titles[langIndex],
+      bodies[langIndex],
       notificationDetails,
     );
   }

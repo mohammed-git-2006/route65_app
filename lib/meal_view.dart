@@ -65,10 +65,13 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
 
   bool isMeal = true;
   int grams = 0, orderQ = 1;
+  int drinkSelection = 0;
 
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final viewOptions = (args['view_options'] as String).split(',');
+    final drinksMenu = (args['drinks'] as List<dynamic>);
     final size = MediaQuery.of(context).size;
     final cs = Theme.of(context).colorScheme;
     final dic = L10n.of(context)!;
@@ -108,8 +111,10 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
       price += ((grams  - minGrams) / 50.0);
     }
 
-    final isAppetizer = cat == 'Appetizers';
-
+    // final isAppetizer = cat == 'Appetizers';
+    // final isAppetizer = viewOptions[0] != 'full';
+    final showFull = viewOptions[0] == 'full';
+    final showQuantities = viewOptions.length > 1 ? viewOptions[1] == 'quantity' : false;
 
     final optionsDecoration = BoxDecoration(
       color: HSLColor.fromColor(cs.surface).withLightness(.9725).toColor(),
@@ -117,7 +122,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
       borderRadius: BorderRadius.circular(15)
     );
 
-    if (animations.isEmpty && cat != 'Appetizers') {
+    if (animations.isEmpty && showFull) {
       for(int i=0;i<menuItem['c'].length;++i) {
         final _animation = new AnimationSet()..init(this, .0, 1.0, Durations.medium1, Curves.easeInBack);
         if (i == menuItem['c'].length-1) _animation.whenDone(r1Animation);
@@ -185,7 +190,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ],
                   ),),
 
-                  if (!isAppetizer) Padding(padding: EdgeInsets.symmetric(horizontal: 10.0), child: Wrap(
+                  if (showFull) Padding(padding: EdgeInsets.symmetric(horizontal: 10.0), child: Wrap(
                     runSpacing: 10,
                     spacing: 15,
                     children: List.generate(menuItem['c'].length, (i) {
@@ -206,7 +211,9 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     }),
                   ),),
 
-                  if (!isAppetizer) Transform.translate(
+                  // Text('Cats View Options --> ${viewOptions}'),
+
+                  if (showFull) Transform.translate(
                     offset: Offset(.0, -10 * math.sin(math.pi * r1Animation.value)),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -315,7 +322,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ),
                   ),
 
-                  if (!isAppetizer && cat != 'Hotdog') Transform.translate(
+                  if (showFull && cat != 'Hotdog') Transform.translate(
                     offset: Offset(.0, -10 * math.sin(math.pi * r2Animation.value)),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -450,7 +457,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ),
                   ),
 
-                  if (!isAppetizer) Transform.translate(
+                  if (showFull) Transform.translate(
                     offset: Offset(.0, -10 * math.sin(math.pi * r3Animation.value)),
                     child: Opacity(
                       opacity: ((friesOptionsAnimation.value * 2.0) - 1).clamp(.0, 1.0),
@@ -600,7 +607,30 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ),
                   ),
 
-                  if (!isAppetizer && cat != 'Hotdog') Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Row(
+                  if (isMeal && cat != 'Drinks' && showBurgerInfo(cat)) SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: List.generate(drinksMenu.length, (i) {
+                      final bevItem = drinksMenu[i];
+                      final isSelected = i == drinkSelection;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            drinkSelection = i;
+                          });
+                        },
+                        child: Container(
+                          margin: EdgeInsets.symmetric(horizontal: 5),
+                          decoration: isSelected ? optionsDecoration.copyWith(color: cs.secondary) : optionsDecoration,
+                          padding: EdgeInsets.all(15),
+                          child: Center(child: Text((bevItem[isAr ? 'na' : 'ne'] as String).replaceAll('250 ml', ''), style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.bold
+                          ),)),
+                        ),
+                      );
+                    }),),
+                  ),
+
+                  if (showFull && cat != 'Hotdog') Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       DropdownMenu(dropdownMenuEntries: ([[dic.pa_normal, PattyType.NORMAL], cat == 'Chicken' ?
@@ -655,12 +685,13 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     ],
                   ),),
 
-                  if (cat == 'Appetizers' && menuItem['q'] != 1) Row(
+                  if (showQuantities && menuItem['q'] != 1) Row(
                     children: [
                       SizedBox(width: 20,),
                       Text('${menuItem['q']} ${dic.piece}', style: TextStyle(fontSize: size.width * .045, fontWeight: FontWeight.bold), textAlign: TextAlign.start,),
                     ],
                   ),
+
 
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 15),
@@ -698,13 +729,14 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     Navigator.of(context).pop({
                       'q' : orderQ,
                       'ppi' : price,
-                      'bt' : cat != 'Hotdog' && cat != 'Appetizers' ? breadType : null,
-                      'pt' : cat != 'Hotdog' && cat != 'Appetizers' ? pattyType : null,
-                      'ft' : isMeal && cat != 'Appetizers'? friesType : null,
+                      'bt' : showBurgerInfo(cat) && cat != 'Hotdog' ? breadType : null,
+                      'pt' : showBurgerInfo(cat) && cat != 'Hotdog' ? pattyType : null,
+                      'ft' : isMeal && showBurgerInfo(cat)? friesType : null,
                       'an' : notesController.text,
-                      'g' : cat != 'Hotdog' && cat != 'Appetizers' ? grams : null,
+                      'g' : returnGrams(cat) ? grams : null,
                       'apq' : cat == 'Appetizers' ? menuItem['q'] : null,
-                      'im' : isMeal
+                      'im' : isMeal,
+                      'bev' : isMeal && cat != 'Drinks'  && showBurgerInfo(cat) ? drinksMenu[drinkSelection][isAr ? 'na' : 'ne'] : null
                     });
                   },
                   child: Container(
@@ -733,10 +765,9 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(45)
                   ),
                   child: Row(spacing: 15, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                    // Text('+', style: TextStyle(color: cs.secondary, fontWeight: FontWeight.bold, fontSize: size.width * .05),),
                     GestureDetector(child: Icon(Icons.add, color: cs.secondary), onTap: () {
                       setState(() {
-                        orderQ += 1;
+                        orderQ ++;
                       });
                     },),
                     Text('$orderQ', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .04),),
@@ -756,6 +787,10 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
       ),
     );
   }
+
+  bool returnGrams(String cat) => ['Chicken', 'Beef'].contains(cat);
+  bool showBurgerInfo(String cat) => ['Chicken', 'Beef', 'Hotdog'].contains(cat);
+  // bool showBevLine(String cat) => ['Drinks', 'Hotdog'].contains(cat);
 
   @override
   void dispose() {

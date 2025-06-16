@@ -126,6 +126,15 @@ class L10nEn extends L10n {
   String get takeaway_qs => 'Arab Revolt Plaza branch';
 
   @override
+  String get sehha => 'Enjoy your meal!';
+
+  @override
+  String get bev => 'drink : ';
+
+  @override
+  String get takeaway_ready => 'Your order is ready!';
+
+  @override
   String get delivery => 'delivery';
 
   @override

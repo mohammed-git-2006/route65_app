@@ -126,6 +126,15 @@ class L10nAr extends L10n {
   String get takeaway_qs => 'فرع القلعة';
 
   @override
+  String get sehha => 'صحة وعافية!';
+
+  @override
+  String get bev => 'مشروب : ';
+
+  @override
+  String get takeaway_ready => 'طلبك جاهز!';
+
+  @override
   String get delivery => 'توصيل';
 
   @override

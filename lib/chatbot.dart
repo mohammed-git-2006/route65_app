@@ -245,11 +245,6 @@ class _ChatBotPageState extends State<ChatBotPage> {
   void initState() {
     super.initState();
 
-
-    inputController.addListener(() {
-      // scrollController.animateTo(scrollController.position.maxScrollExtent, duration: Durations.medium1, curve: Curves.easeIn,);
-    });
-
     userProfile.loadFromPref().then((_) => setState(() {
       loading = false;
       // sendOpenAIMessage('');

@@ -329,6 +329,24 @@ abstract class L10n {
   /// **'Arab Revolt Plaza branch'**
   String get takeaway_qs;
 
+  /// No description provided for @sehha.
+  ///
+  /// In en, this message translates to:
+  /// **'Enjoy your meal!'**
+  String get sehha;
+
+  /// No description provided for @bev.
+  ///
+  /// In en, this message translates to:
+  /// **'drink : '**
+  String get bev;
+
+  /// No description provided for @takeaway_ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order is ready!'**
+  String get takeaway_ready;
+
   /// No description provided for @delivery.
   ///
   /// In en, this message translates to:

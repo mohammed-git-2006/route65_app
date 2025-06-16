@@ -15,6 +15,7 @@ import 'package:route65/home.dart';
 import 'package:route65/l10n/animation_set.dart';
 import 'package:route65/meal_view.dart';
 import 'package:route65/qr_page.dart';
+import 'package:route65/tokens_redeem.dart';
 import 'l10n/l10n.dart';
 import 'dart:math' as math;
 
@@ -43,7 +44,7 @@ class MaterialLauncher extends StatelessWidget {
 
     final theme = ThemeData(
       colorScheme: cs,
-      textTheme: GoogleFonts.notoSansTextTheme(),
+      textTheme: GoogleFonts.cairoTextTheme(),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
@@ -85,6 +86,7 @@ class MaterialLauncher extends StatelessWidget {
         '/qr_code' : (context) => QrPage(),
         '/dine_room' : (context) => DiningRoomView(),
         '/confirm_order' : (context) => ConfirmOrder(),
+        '/tokens_redeem' : (context) => TokensRedeem(),
       },
       initialRoute: '/login',
       supportedLocales: L10n.supportedLocales,

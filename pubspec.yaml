@@ -66,6 +66,7 @@ dependencies:
   socket_io_client: ^3.1.2
   google_fonts: ^6.2.1
   fuzzy: ^0.5.1
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +81,11 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.png"
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -119,6 +125,9 @@ flutter:
     - assets/congrats.json
     - assets/preparing.json
     - assets/delivering.json
+    - assets/burger.json
+    - assets/takeaway_ready.json
+    - assets/logo.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

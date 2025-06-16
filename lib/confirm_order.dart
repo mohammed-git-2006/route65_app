@@ -231,9 +231,9 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
                       SizedBox(width: 20, ),
                       Expanded(child: Divider(color: Colors.grey.shade300, thickness: 2)),
                       SizedBox(width: 20, ),
-                      Text('${(orderInformation['price_no_voucher'] as double).toStringAsFixed(2)} JD', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, decoration: TextDecoration.lineThrough, decorationColor: Colors.red.shade800, color: Colors.red.shade800),),
+                      Text('${(orderInformation['price_no_voucher'] as double).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, decoration: TextDecoration.lineThrough, decorationColor: Colors.red.shade800, color: Colors.red.shade800),),
                       SizedBox(width: 20, ),
-                      Text('${(orderInformation['total_price'] as double).toStringAsFixed(2)} JD', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.secondary),)
+                      Text('${(orderInformation['total_price'] as double).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.secondary),)
                     ],),
                   ),
                 ),
