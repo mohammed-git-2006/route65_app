@@ -328,4 +328,19 @@ class L10nEn extends L10n {
 
   @override
   String get rt_header => 'order from the app and get points to redeem !';
+
+  @override
+  String get first_time_order => 'First time ordering from route 65 ? or don\'t know what to order?';
+
+  @override
+  String get sug_beef => 'Beef';
+
+  @override
+  String get sug_chicken => 'Chicken';
+
+  @override
+  String get sug_hotdog => 'Hotdog';
+
+  @override
+  String get route65_recommendation => 'What Route 65 recommend for you';
 }

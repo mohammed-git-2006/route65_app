@@ -315,7 +315,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   PageController pageController = PageController(initialPage: 1);
 
   Widget carouselViewText(dynamic banner, dynamic size, bool isAr, bool alTop) {
-    final style = TextStyle(color: Color(banner['fg']), fontSize: size.width * .055, overflow: TextOverflow.visible);
+    final style = TextStyle(color: Color(banner['fg']), fontSize: 17, overflow: TextOverflow.visible);
     if (isAr && alTop)   return  Positioned(top: 0    , right: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
     if (isAr && !alTop)  return  Positioned(bottom: 0 , right: 0, child: SizedBox(width: size.width * .6, child: Text('${banner['tar']}', style: style,)));
     if (!isAr && alTop)  return  Positioned(top: 0    , left: 0 , child: SizedBox(width: size.width * .6, child: Text('${banner['ten']}', style: style,)));
@@ -386,6 +386,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     }
   }
 
+  void openMealViewCallback(String category, Map<String, dynamic> menuItem) async {
+    final pushResult = await Navigator.pushNamed(context, '/meal_view', arguments: {
+      'data' : menuItem,
+      'image_provider' : menuSavedImages[menuItem['i']],
+      'category' : category,
+      'cs' : menuData['cs'],
+      'waiting_order' : userProfile.waiting_order??false,
+      'view_options' : catsViewOptions[category],
+      'drinks' : menuData['Drinks']
+    }) as Map<String, dynamic>;
+
+    if (pushResult.containsKey('ordered')) {
+      return;
+    }
+
+    pushResult.addAll({
+      'id' : menuItem['id'],
+      'na' : menuItem['na'],
+      'ne' : menuItem['ne'],
+      'img' : menuItem['i'],
+      'cat' : category,
+    });
+
+    myBasket.add(pushResult);
+    setState(() {});
+
+    Future.delayed(Durations.medium3).then((_) {
+      basketAnimation.reset();
+      basketAnimation.start();
+    });
+  }
+
   Widget getMenuItemsView(String category) {
     final isAr = Directionality.of(context) == TextDirection.rtl;
     final cs = Theme.of(context).colorScheme;
@@ -442,8 +474,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           child: Hero(
                             tag: '${menuItem['ne']}',
                             child: Container(
-                              width: size.width * .45,
-                              height: size.width * .45,
+                              width: 13,
+                              height: 13,
                               decoration: BoxDecoration(
                                   color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
                                   borderRadius:  BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
@@ -492,7 +524,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                       if (menuItem['c'].length != 0) Text('${category != 'Appetizers' ? menuItem['c'].map((c) {
                         return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
-                      }) : (menuItem['q'] == 1? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: size.width * .025),),
+                      }) : (menuItem['q'] == 1? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: 10),),
 
                       Row(
                         spacing: 5,
@@ -508,35 +540,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 color: cs.surface,
                                 icon: FaIcon(FontAwesomeIcons.add, size: 15,),
                                 onPressed: () async {
-                                  final pushResult = await Navigator.pushNamed(context, '/meal_view', arguments: {
-                                    'data' : menuItem,
-                                    'image_provider' : menuSavedImages[menuItem['i']],
-                                    'category' : category,
-                                    'cs' : menuData['cs'],
-                                    'waiting_order' : userProfile.waiting_order??false,
-                                    'view_options' : catsViewOptions[category],
-                                    'drinks' : menuData['Drinks']
-                                  }) as Map<String, dynamic>;
-
-                                  if (pushResult.containsKey('ordered')) {
-                                    return;
-                                  }
-
-                                  pushResult.addAll({
-                                    'id' : menuItem['id'],
-                                    'na' : menuItem['na'],
-                                    'ne' : menuItem['ne'],
-                                    'img' : menuItem['i'],
-                                    'cat' : category,
-                                  });
-
-                                  myBasket.add(pushResult);
-                                  setState(() {});
-
-                                  Future.delayed(Durations.medium3).then((_) {
-                                    basketAnimation.reset();
-                                    basketAnimation.start();
-                                  });
+                                  openMealViewCallback(category, menuItem);
                                 },
                               ),
                             )
@@ -714,7 +718,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                     )),
 
                     SizedBox(height: 25,),
-                    Text(userProfile.name!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .065),),
+                    Text(userProfile.name!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 18),),
 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -741,11 +745,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               children: [
                                 Image.asset(item[1] as String, width: 25,),
                                 if (item[2] as bool) Row(mainAxisSize: MainAxisSize.min, spacing: 5, children: [
-                                  Text((item[0] as String).split(' ')[0], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.bold : FontWeight.normal, fontSize: size.width * .04)),
-                                  Text((item[0] as String).split(' ')[1], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.normal : FontWeight.bold, fontSize: size.width * .04),),
+                                  Text((item[0] as String).split(' ')[0], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+                                  Text((item[0] as String).split(' ')[1], style: TextStyle(fontWeight: (item[3] as bool) ? FontWeight.normal : FontWeight.bold, fontSize: 13),),
                                 ],),
 
-                                if (!(item[2] as bool)) Text(item[0] as String, style: TextStyle(fontSize: size.width * .035),)
+                                if (!(item[2] as bool)) Text(item[0] as String, style: TextStyle(fontSize: 13),)
                               ],
                             ),
                           ),
@@ -786,12 +790,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           children: [
                             Text(
                               dic.current_location,
-                              style: TextStyle(color: cs.surface, fontSize: size.width * .045),
+                              style: TextStyle(color: cs.surface, fontSize: 16),
                             ),
 
                             Text(
                               userProfile.location ?? ' -- ',
-                              style: TextStyle(color: cs.surface, fontSize: size.width * .045, decoration: TextDecoration.underline, decorationColor: cs.surface,
+                              style: TextStyle(color: cs.surface, fontSize: 16, decoration: TextDecoration.underline, decorationColor: cs.surface,
                                 decorationThickness: 1.25),
                             ),
                           ],
@@ -910,9 +914,41 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           ),
                         ),
 
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: GestureDetector(
+                            onTap: () async {
+                              final sugR = await Navigator.of(context).pushNamed('/meal_suggestion', arguments: {
+                                'menuData' : menuData,
+                                'images' : menuSavedImages
+                              });
+
+                              if (sugR != null) {
+                                final dirInfo = sugR as Map<String, dynamic>;
+
+                                openMealViewCallback(dirInfo['cat'], dirInfo['menuItem']);
+                              }
+                            },
+
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: cs.secondary.withAlpha(15),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: Colors.grey.shade300, width: 1),
+                              ),
+
+                              padding: EdgeInsets.all(10),
+
+                              child: Center(child: Text(dic.first_time_order, textAlign: TextAlign.center,style: TextStyle(decoration: TextDecoration.underline),))
+                            ),
+                          ),
+                        ),
+
                         Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Row(
                           spacing: 10,
                           children: [
+
                             Expanded(
                               child:GestureDetector(
                                 onTap: () {
@@ -931,7 +967,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   // --BUTTON-ASSETS
                                   child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                     Image.asset('assets/coin.png', width: 28,),
-                                    Transform.translate(offset: Offset(0, 3), child: Text('${userProfile.tokens?.toStringAsFixed(2)} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: size.width * .045),)),
+                                    Transform.translate(offset: Offset(0, 3), child: Text('${userProfile.tokens?.toStringAsFixed(2)} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: 16),)),
                                   ],),
                                 ),
                               ),
@@ -952,7 +988,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   ),
                                   child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                     Image.asset('assets/dining-room.png', width: 35,),
-                                    Transform.translate(offset: Offset(0, 2), child: Text(dic.tables, style: TextStyle(color: cs.primary, fontSize: size.width * .045),))
+                                    Transform.translate(offset: Offset(0, 2), child: Text(dic.tables, style: TextStyle(color: cs.primary, fontSize: 16),))
                                   ],),
                                 ),
                               ),
@@ -1053,8 +1089,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                         Row(
                                           spacing: 5,
                                           children: [
-                                            Text('${basketItem[isAr ? 'name' : 'name_english']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, overflow: TextOverflow.ellipsis),),
-                                            Text('x${basketItem['quantity']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color:cs.secondary),
+                                            Text('${basketItem[isAr ? 'name' : 'name_english']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, overflow: TextOverflow.ellipsis),),
+                                            Text('x${basketItem['quantity']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color:cs.secondary),
                                               textDirection: Directionality.of(context) == TextDirection.rtl ? TextDirection.ltr : TextDirection.rtl,),
                                           ],
                                         ),
@@ -1086,14 +1122,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('${dic.your_basket}', style: TextStyle(fontSize: size.width * .055)),
-                          if (!usingVoucher) Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary),),
+                          Text('${dic.your_basket}', style: TextStyle(fontSize: 16)),
+                          if (!usingVoucher) Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.secondary),),
                           if (usingVoucher) Row(
                             mainAxisSize: MainAxisSize.min,
                             spacing: 15,
                             children: [
-                              Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: Colors.red.shade800, decoration: TextDecoration.lineThrough, decorationThickness: 3, decorationStyle: TextDecorationStyle.solid, decorationColor: Colors.red.shade800)),
-                              Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: size.width * .055, fontWeight: FontWeight.bold, color: cs.secondary))
+                              Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.red.shade800, decoration: TextDecoration.lineThrough, decorationThickness: 3, decorationStyle: TextDecorationStyle.solid, decorationColor: Colors.red.shade800)),
+                              Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.secondary))
                             ],
                           )
                         ],
@@ -1160,8 +1196,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                         ),
 
                                         SizedBox(width: 5),
-                                        Text('${basketItem[isAr ? 'na' : 'ne']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, overflow: TextOverflow.ellipsis),),
-                                        Text('x${basketItem['q']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color:cs.secondary),
+                                        Text('${basketItem[isAr ? 'na' : 'ne']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, overflow: TextOverflow.ellipsis),),
+                                        Text('x${basketItem['q']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color:cs.secondary),
                                             textDirection: Directionality.of(context) == TextDirection.rtl ? TextDirection.ltr : TextDirection.rtl,),
                                       ],
                                     ),
@@ -1177,7 +1213,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               Divider(color: Colors.grey.shade400,),
                               Row(
                                 children: [
-                                  Text('${basketItem['ppi']} x ${basketItem['q']} = ${(basketItem['ppi'] * basketItem['q']).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color: cs.secondary),
+                                  Text('${basketItem['ppi']} x ${basketItem['q']} = ${(basketItem['ppi'] * basketItem['q']).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cs.secondary),
                                     textDirection: TextDirection.ltr,),
                                 ],
                               ),
@@ -1196,7 +1232,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                          child: Text(dic.use_voucher,style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0525),
+                          child: Text(dic.use_voucher,style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             textAlign: TextAlign.start),
                         ),
 
@@ -1342,10 +1378,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(dic.total_price,style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425),
+                                Text(dic.total_price,style: TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
                                     textAlign: TextAlign.start),
 
-                                Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425, color: cs.secondary))
+                                Text('${totalBasketPrice.toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.normal, fontSize: 15, color: cs.secondary))
 
                               ],
                             ),
@@ -1353,10 +1389,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(dic.voucher_value,style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425),
+                                Text(dic.voucher_value,style: TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
                                     textAlign: TextAlign.start),
 
-                                Text('${voucherDiscountPerc.toStringAsFixed(0)} %', style: TextStyle(fontWeight: FontWeight.normal, fontSize: size.width * .0425, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
+                                Text('${voucherDiscountPerc.toStringAsFixed(0)} %', style: TextStyle(fontWeight: FontWeight.normal, fontSize: 15, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
 
                               ],
                             ),
@@ -1364,9 +1400,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(dic.price_after_discount,style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0425),
+                                Text(dic.price_after_discount,style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     textAlign: TextAlign.start),
-                                Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .0425, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
+                                Text('${(totalBasketPrice * (1.0 - (voucherDiscountPerc / 100.0))).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: checkingVoucher ? Colors.grey.shade400 : cs.secondary))
 
                               ],
                             ),

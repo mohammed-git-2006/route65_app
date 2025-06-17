@@ -106,5 +106,10 @@
   "as" : "Sakan Al-Ateba'",
   "ak" : "Al-Khazan",
   "no_vouchers_for_redeem" : "No vouchers for redeem",
-  "rt_header" : "order from the app and get points to redeem !"
+  "rt_header" : "order from the app and get points to redeem !",
+  "first_time_order" : "First time ordering from route 65 ? or don't know what to order?",
+  "sug_beef" : "Beef",
+  "sug_chicken" : "Chicken",
+  "sug_hotdog" : "Hotdog",
+  "route65_recommendation" : "What Route 65 recommend for you"
 }

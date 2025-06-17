@@ -328,4 +328,19 @@ class L10nAr extends L10n {
 
   @override
   String get rt_header => 'اطلب من التطبيق واحصل على على نقاط';
+
+  @override
+  String get first_time_order => 'أول مرّة تطلب من الروت؟ أو محتار؟';
+
+  @override
+  String get sug_beef => 'لحمة';
+
+  @override
+  String get sug_chicken => 'دجاج';
+
+  @override
+  String get sug_hotdog => 'هوت دوق';
+
+  @override
+  String get route65_recommendation => 'شو اختارلك روت 65:';
 }

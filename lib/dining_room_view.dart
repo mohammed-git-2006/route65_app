@@ -89,8 +89,8 @@ class _DiningRoomViewState extends State<DiningRoomView> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${i+1}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .065, color: tablesMap[(i > 11 ? i-1 : i)] ?cs.surface:cs.primary),),
-              Text(tablesMap[(i > 11 ? i-1 : i)] ? dic.occupied : dic.free, style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .04, color: tablesMap[(i > 11 ? i-1 : i)] ?cs.surface:cs.primary)),
+              Text('${i+1}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: tablesMap[(i > 11 ? i-1 : i)] ?cs.surface:cs.primary),),
+              Text(tablesMap[(i > 11 ? i-1 : i)] ? dic.occupied : dic.free, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: tablesMap[(i > 11 ? i-1 : i)] ?cs.surface:cs.primary)),
             ],
           ),
         ),

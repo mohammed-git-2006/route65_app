@@ -13,6 +13,7 @@ import 'package:route65/dining_room_view.dart';
 import 'package:route65/firebase_options.dart';
 import 'package:route65/home.dart';
 import 'package:route65/l10n/animation_set.dart';
+import 'package:route65/meal_suggestion.dart';
 import 'package:route65/meal_view.dart';
 import 'package:route65/qr_page.dart';
 import 'package:route65/tokens_redeem.dart';
@@ -81,7 +82,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
+      locale: const Locale('en'),
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -90,6 +91,7 @@ class MaterialLauncher extends StatelessWidget {
         '/dine_room' : (context) => DiningRoomView(),
         '/confirm_order' : (context) => ConfirmOrder(),
         '/tokens_redeem' : (context) => TokensRedeem(),
+        '/meal_suggestion' : (context) => MealSuggestionPage(),
       },
       initialRoute: '/login',
       supportedLocales: L10n.supportedLocales,
@@ -310,7 +312,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         print(result.content);
         getBottomSheet([
           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
-          Text(L10n.of(context)!.login_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .05),)
+          Text(L10n.of(context)!.login_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 15),)
         ]);
         break;
     }
@@ -372,7 +374,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               Positioned(bottom: size.width * .2, left: size.width * .1, right: size.width * .1, child: Column(
                 spacing: 15,
                 children: [
-                  Opacity(opacity: loginAnimation.value, child: Text(dic.login, style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * .06),)),
+                  Opacity(opacity: loginAnimation.value, child: Text(dic.login, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),)),
                   Opacity(opacity: dividerAnimation.value, child: Divider()),
                   Opacity(
                     opacity: googleButtonAnimation.value,
@@ -439,7 +441,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                 // Text('${authEng.userProfile.toJson()}'),
 
-                Opacity(opacity: p2Name.value, child: Text(p2NameHolder, style: TextStyle(fontSize: size.width * .05, fontWeight: FontWeight.bold),))
+                Opacity(opacity: p2Name.value, child: Text(p2NameHolder, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),))
               ],
 
             ),),
@@ -469,7 +471,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                           getBottomSheet([
                             Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
-                            Text(dic.name_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
+                            Text(dic.name_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 16),)
                           ]);
                         } else {
                           pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
@@ -493,8 +495,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               spacing: 45,
               children: [
                 /*Wrap(spacing: 15, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Opacity(opacity: p3t1.value, child: Text(dic.enter_phone, style: TextStyle(fontSize: size.width * .055),)),
-                  Opacity(opacity: p3t2.value, child: Text('📞', style: TextStyle(fontSize: size.width * .055)))
+                  Opacity(opacity: p3t1.value, child: Text(dic.enter_phone, style: TextStyle(fontSize: 17),)),
+                  Opacity(opacity: p3t2.value, child: Text('📞', style: TextStyle(fontSize: 17)))
                 ],),*/
                 Opacity(
                   opacity: p3t1.value,
@@ -508,7 +510,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   ),
                 ),
 
-                Opacity(opacity: p3t2.value, child: Text(dic.enter_phone, style: TextStyle(fontSize: size.width * .055))),
+                Opacity(opacity: p3t2.value, child: Text(dic.enter_phone, style: TextStyle(fontSize: 17))),
 
 
                 Opacity(
@@ -534,7 +536,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               controller: p3controller,
                               textAlignVertical: TextAlignVertical.bottom,
                               keyboardType: TextInputType.number,
-                              style: TextStyle(letterSpacing: 2, fontSize: size.width * .05),
+                              style: TextStyle(letterSpacing: 2, fontSize: 14),
                               decoration: InputDecoration(
                                 counterText: '',
                                 hintText: '...',
@@ -583,7 +585,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         }, verificationFailed: (error) {
                           getBottomSheet([
                             Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
-                            Text(dic.send_code_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
+                            Text(dic.send_code_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 16),)
                           ]);
                           setState(() {
                             setState(() {
@@ -627,8 +629,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               spacing: 45,
               children: [
                 /*Wrap(spacing: 15, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Opacity(opacity: p4t1.value, child: Text(dic.phone_check, style: TextStyle(fontSize: size.width * .055),)),
-                  Opacity(opacity: p4t2.value, child: Text('📩', style: TextStyle(fontSize: size.width * .055)))
+                  Opacity(opacity: p4t1.value, child: Text(dic.phone_check, style: TextStyle(fontSize: 17),)),
+                  Opacity(opacity: p4t2.value, child: Text('📩', style: TextStyle(fontSize: 17)))
                 ],),*/
 
                 SizedBox(
@@ -640,7 +642,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   ),
                 ),
 
-                Opacity(opacity: p3t2.value, child: Text(dic.check_phone, style: TextStyle(fontSize: size.width * .055))),
+                Opacity(opacity: p3t2.value, child: Text(dic.check_phone, style: TextStyle(fontSize: 17))),
 
                 Directionality(
                   textDirection: TextDirection.ltr,
@@ -731,7 +733,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         getBottomSheet([
                           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
                           Text('$err'),
-                          Text(dic.code_auth_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: size.width  * .055),)
+                          Text(dic.code_auth_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 15),)
                         ],);
                       }
                     },
@@ -751,8 +753,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           Stack(children: [
             Positioned(left: size.width * .05, right: size.width * .05, top: size.width * .1, child: Column(spacing: 45, children: [
               /*Row(spacing: 15, mainAxisSize: MainAxisSize.min, children: [
-                Opacity(opacity: p5t1.value, child: Text(dic.location, style: TextStyle(fontSize: size.width * .055),)),
-                Opacity(opacity: p5t2.value, child: Text('📍 🗺️', style: TextStyle(fontSize: size.width * .055)))
+                Opacity(opacity: p5t1.value, child: Text(dic.location, style: TextStyle(fontSize: 17),)),
+                Opacity(opacity: p5t2.value, child: Text('📍 🗺️', style: TextStyle(fontSize: 17)))
               ],),*/
 
               SizedBox(
@@ -760,7 +762,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 child: Lottie.asset('assets/map_animation.json'),
               ),
 
-              Opacity(opacity: p3t2.value, child: Text(dic.location, style: TextStyle(fontSize: size.width * .055))),
+              Opacity(opacity: p3t2.value, child: Text(dic.location, style: TextStyle(fontSize: 17))),
 
               // Text('til tomm ${areasList}'),
               Opacity(
@@ -800,7 +802,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               spacing: 25,
               children: [
                 Lottie.asset('assets/green_check.json'),
-                Text(dic.account_finished, style: TextStyle(fontSize: size.width * .055),
+                Text(dic.account_finished, style: TextStyle(fontSize: 17),
                 )
               ],
             )),

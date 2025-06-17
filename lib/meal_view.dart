@@ -184,8 +184,8 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: Text(itemName, style: TextStyle(fontSize: size.width * .07, fontWeight: FontWeight.bold),)),
-                      Text('${(price * orderQ).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(color: cs.secondary, fontSize: size.width * .065, fontWeight: FontWeight.bold),
+                      Expanded(child: Text(itemName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),)),
+                      Text('${(price * orderQ).toStringAsFixed(2)} ${dic.jd}', style: TextStyle(color: cs.secondary, fontSize: 22, fontWeight: FontWeight.bold),
                         textDirection: isAr ? TextDirection.ltr : TextDirection.rtl,),
                     ],
                   ),),
@@ -673,7 +673,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                                 grams += incrementalUnit;
                               });
                             },),
-                            Text('$grams', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .04),),
+                            Text('$grams', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 16),),
                             GestureDetector(child: Icon(Icons.remove, color: grams == minGrams ? Colors.grey.shade300 : cs.secondary), onTap: () {
                               setState(() {
                                 grams -= incrementalUnit;
@@ -688,7 +688,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                   if (showQuantities && menuItem['q'] != 1) Row(
                     children: [
                       SizedBox(width: 20,),
-                      Text('${menuItem['q']} ${dic.piece}', style: TextStyle(fontSize: size.width * .045, fontWeight: FontWeight.bold), textAlign: TextAlign.start,),
+                      Text('${menuItem['q']} ${dic.piece}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.start,),
                     ],
                   ),
 
@@ -750,7 +750,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       spacing: 10,
                       children: [
-                        Text(dic.mv_post, style: TextStyle(color: cs.surface, fontSize: size.width * .04125),),
+                        Text(dic.mv_post, style: TextStyle(color: cs.surface, fontSize: 14),),
                         FaIcon(FontAwesomeIcons.cartShopping, color: cs.surface, size: 12,),
                       ],
                     ),
@@ -770,7 +770,7 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
                         orderQ ++;
                       });
                     },),
-                    Text('$orderQ', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: size.width * .04),),
+                    Text('$orderQ', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 13),),
                     GestureDetector(child: Icon(Icons.remove, color: orderQ == 1 ? Colors.grey.shade300 : cs.secondary), onTap: () {
                       setState(() {
                         if (orderQ > 1) {

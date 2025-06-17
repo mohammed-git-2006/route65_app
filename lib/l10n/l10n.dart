@@ -736,6 +736,36 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'order from the app and get points to redeem !'**
   String get rt_header;
+
+  /// No description provided for @first_time_order.
+  ///
+  /// In en, this message translates to:
+  /// **'First time ordering from route 65 ? or don\'t know what to order?'**
+  String get first_time_order;
+
+  /// No description provided for @sug_beef.
+  ///
+  /// In en, this message translates to:
+  /// **'Beef'**
+  String get sug_beef;
+
+  /// No description provided for @sug_chicken.
+  ///
+  /// In en, this message translates to:
+  /// **'Chicken'**
+  String get sug_chicken;
+
+  /// No description provided for @sug_hotdog.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotdog'**
+  String get sug_hotdog;
+
+  /// No description provided for @route65_recommendation.
+  ///
+  /// In en, this message translates to:
+  /// **'What Route 65 recommend for you'**
+  String get route65_recommendation;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

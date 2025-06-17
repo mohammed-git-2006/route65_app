@@ -128,6 +128,12 @@ flutter:
     - assets/burger.json
     - assets/takeaway_ready.json
     - assets/logo.png
+    - assets/chicken.png
+    - assets/beef.png
+    - assets/hotdog.png
+    - assets/normal_patty.png
+    - assets/grilled_patty.png
+    - assets/beef_patty.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
