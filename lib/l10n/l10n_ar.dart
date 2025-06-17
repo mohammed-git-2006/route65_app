@@ -322,4 +322,10 @@ class L10nAr extends L10n {
 
   @override
   String get ak => 'الخزّان';
+
+  @override
+  String get no_vouchers_for_redeem => 'لا توجد قسائم للإستخدام';
+
+  @override
+  String get rt_header => 'اطلب من التطبيق واحصل على على نقاط';
 }

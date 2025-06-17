@@ -67,8 +67,62 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     await userProfile.updateFCM(fcm);
 
     FirebaseMessaging.onMessage.listen((event) {
+      if (event.data.length != 0) {
+        if (event.data.containsKey('DELIVERING')) {
+          setState(() {
+            currentOrderStatus = 'DELIVERING';
+          });
+        } else {
+          setState(() {
+            currentOrderStatus = 'DONE';
+            onStatusDone();
+          });
+        }
+      }
+
       AuthEngine.showLocalNotification(event);
     },);
+  }
+
+  void onStatusDone() {
+    userProfile.update(no_orders: userProfile.no_orders??0 + 1);
+    showDialog(context: context, builder: (context) {
+      return AlertDialog(
+        content: Container(
+          height: 350,
+          padding: EdgeInsets.all(25),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 10,
+                  children: [
+                    SizedBox(height: 150, child: lottieLib.Lottie.asset('assets/burger.json', repeat: false)),
+                    Text(L10n.of(context)!.sehha, style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
+                  ],
+                ),
+              ),
+
+              Positioned.fill(
+                child: lottieLib.Lottie.asset('assets/congrats.json'),
+              )
+            ],
+          ),
+        ),
+      );
+    });
+
+    loadTokensFromServer().then((r) {
+      if (r) {
+        setState(() {});
+      }
+    });
+
+    userProfile.update(waiting_order: false, coc: '');
+    usingVoucher = false;
+    voucherDiscountPerc = 0.0;
   }
 
   Future<bool> loadTokensFromServer() async {
@@ -527,7 +581,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
   void runBackgroundOrderCheck() {
     timer_initialized = true;
-    timer = Timer.periodic(Duration(seconds: 2), timerCallback);
+    // timer = Timer.periodic(Duration(seconds: 2), timerCallback);
   }
 
   void timerCallback(dynamic timer) {

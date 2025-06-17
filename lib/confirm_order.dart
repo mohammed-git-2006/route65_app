@@ -41,6 +41,10 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
   Map<String, dynamic> namesAndFees = {};
 
   Future<void> loadData() async {
+    setState(() {
+      loading = true;
+      connectionErr = false;
+    });
     try {
       final Uri url = Uri.parse('https://www.route-65-dashboard.com/api/delivery');
       final response = await http.get(url);
@@ -212,9 +216,7 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
       ),
 
       body: loading ? Center(child: SizedBox(width: 200, child: Lottie.asset('assets/loading.json'))) :
-        connectionErr ? NoInternetPage(refreshCallback: () {
-
-        }) : Column(
+        connectionErr ? NoInternetPage(refreshCallback: loadData) : Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -339,7 +341,7 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
                   if (!showSR && userLocationSelection.isNotEmpty && !isTakeaway) Padding(
                     padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                     child: Row(spacing: 5, children: [
-                      SizedBox(width:30, child: FaIcon(FontAwesomeIcons.locationDot, color: cs.secondary, size: 20,)),
+                      SizedBox(width:40, child: Center(child: FaIcon(FontAwesomeIcons.locationDot, color: cs.secondary, size: 20,))),
                       SizedBox(width: 5,),
                       Text(dic.search_r_t),
                       Text(userLocationSelection, style: TextStyle(fontWeight: FontWeight.bold),),

@@ -322,4 +322,10 @@ class L10nEn extends L10n {
 
   @override
   String get ak => 'Al-Khazan';
+
+  @override
+  String get no_vouchers_for_redeem => 'No vouchers for redeem';
+
+  @override
+  String get rt_header => 'order from the app and get points to redeem !';
 }

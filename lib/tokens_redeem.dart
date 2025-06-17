@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:route65/auth_engine.dart';
 
@@ -47,6 +49,9 @@ class _TokensRedeemState extends State<TokensRedeem> {
         BoxShadow(color: cs.secondary.withAlpha(15), spreadRadius: 3, blurRadius: 3)
       ]
     );
+    
+    final tokens = userProfile?.tokens ?? 0;
+    final nextSpot = tokens + (100.0 - (tokens % 100));
 
     return Scaffold(
       body: Stack(children: [
@@ -55,7 +60,7 @@ class _TokensRedeemState extends State<TokensRedeem> {
         ),
         Positioned.fill(
           top: 0,
-          bottom: size.height * .85,
+          bottom: size.height * .875,
           left: 0,
           right: 0,
           child: Container(
@@ -66,27 +71,36 @@ class _TokensRedeemState extends State<TokensRedeem> {
         ),
 
         Positioned(top: MediaQuery.of(context).padding.top + 10, left: 10, right: 10, child: Text(
-          'Buy from the restaurant using the app, and get points and vouchers!',
+          dic.rt_header,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),),
 
         /// Tokens view
         Positioned(
-          top: size.height * .1175,
+          top: size.height * .1,
           right: size.width* .05,
           left: size.width*  .05,
           child: Column(
             spacing: 15,
             children: [
               Container(
-                height: size.height * .1,
                 decoration: _decoration,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Row(spacing: 20, children: [
-                    Image.asset('assets/coin.png', height: size.height * .05,),
-                    Text('${dic.tokens} ${userProfile?.tokens?.toStringAsFixed(2)}', style: TextStyle(fontSize: 22),)
-                  ],),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      spacing: 10,
+                      children: [
+                        Row(spacing: 20, children: [
+                          Image.asset('assets/coin.png', height: 35,),
+                          Text('${dic.tokens} ${userProfile?.tokens?.toStringAsFixed(2)}', style: TextStyle(fontSize: 22),)
+                        ],),
+
+                        GradientProgressIndicator(value: 1, width: size.width * .9 - 60, cs: cs, animValue: 1.0)
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -94,7 +108,7 @@ class _TokensRedeemState extends State<TokensRedeem> {
                 decoration: _decoration,
                 child: userProfile?.selfVouchers.length == 0 ? Padding(
                   padding: EdgeInsets.all(15),
-                  child: Text('No vouchers available for redeem'),
+                  child: Text(dic.no_vouchers_for_redeem),
                 ) : Column(children: userProfile!.selfVouchers.map((voucherName) {
                   return Text('$voucherName');
                 }).toList(),),
@@ -104,6 +118,56 @@ class _TokensRedeemState extends State<TokensRedeem> {
         ),
 
       ],),
+    );
+  }
+}
+
+
+class GradientProgressIndicator extends StatelessWidget {
+  late double value, width;
+  double height = 10.0;
+  late ColorScheme cs;
+  late double animValue;
+  GradientProgressIndicator({super.key, required this.value, required this.width, required this.cs, required this.animValue});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(height / 2.0),
+                color: cs.secondary.withAlpha(50)
+              ),
+            ),
+          ),
+
+          Positioned(
+            left: 0,
+            top: 0,
+            // right: ((1.0 - value) * width) * animValue,
+            height: height,
+            width: value *  width,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(height / 2.0),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF228B22), // Forest Green
+                    Color(0xFF32CD32)
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              )
+            ),
+          )
+        ],
+      ),
     );
   }
 }

@@ -36,9 +36,12 @@ class MaterialLauncher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Color(0xFF228B22), // Forest Green
+    // Color(0xFF32CD32)
     final cs = ColorScheme.light(
       surface: Colors.white,
-      secondary: Color(0xFF0C8A5E),
+      // secondary: Color(0xFF0C8A5E),
+      secondary: Color(0xff009252),
       primary: Colors.black
     );
 

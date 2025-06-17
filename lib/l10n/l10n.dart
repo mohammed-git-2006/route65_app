@@ -724,6 +724,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Al-Khazan'**
   String get ak;
+
+  /// No description provided for @no_vouchers_for_redeem.
+  ///
+  /// In en, this message translates to:
+  /// **'No vouchers for redeem'**
+  String get no_vouchers_for_redeem;
+
+  /// No description provided for @rt_header.
+  ///
+  /// In en, this message translates to:
+  /// **'order from the app and get points to redeem !'**
+  String get rt_header;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

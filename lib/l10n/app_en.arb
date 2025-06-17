@@ -104,5 +104,7 @@
   "aa" : "Al-A'lameyeh",
   "ah" : "Al-harafeyeh",
   "as" : "Sakan Al-Ateba'",
-  "ak" : "Al-Khazan"
+  "ak" : "Al-Khazan",
+  "no_vouchers_for_redeem" : "No vouchers for redeem",
+  "rt_header" : "order from the app and get points to redeem !"
 }
