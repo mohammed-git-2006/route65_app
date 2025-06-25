@@ -44,9 +44,6 @@
     <key>UNNotificationAlertStyle</key>
     <string>Alert</string>
 
-    <key>FirebaseAppDelegateProxyEnabled</key>
-    <false/>
-
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -54,7 +51,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.route65.route65</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -90,5 +87,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+    <!-- Recommended: Photo Library Usage -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need photo library access to let you select images for your profile and posts.</string>
+    <!-- Recommended: Location Usage (for Google Maps) -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to show your position on the map and nearby features.</string>
+    <!-- Recommended: Microphone Usage (if needed in future) -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>We need microphone access for audio features in the app.</string>
 </dict>
 </plist>
