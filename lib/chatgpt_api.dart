@@ -45,7 +45,6 @@ class OpenAIAPI {
       };
 
       final response = await http.post(url, body: body);
-      print('got resposne from server! ${response.body}');
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       
       if (decoded.containsKey('server_error')) {
@@ -55,7 +54,7 @@ class OpenAIAPI {
 
       print('no error found');
 
-      return MessageResult(OpenAIStatus.SUCCESFULL, response.body);
+      return MessageResult(OpenAIStatus.SUCCESFULL, decoded['messages']);
     } catch (err) {
       print('[Code Level] error found $err');
       return MessageResult(OpenAIStatus.ERROR, '$err');

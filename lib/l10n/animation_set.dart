@@ -83,3 +83,49 @@ Widget ShadowContainer({required Widget? child}) {
     child: child,
   );
 }
+
+
+class AnimationsCollection {
+  Map<int, AnimationSet> _animations = new Map<int, AnimationSet>();
+
+  void create(int id, dynamic provider, double s, double e, Duration duration, Curve curve) {
+    _animations.addAll({
+      id: new AnimationSet()..init(provider, s, e, duration, curve)
+    });
+  }
+
+  AnimationSet? get(int i) => _animations.containsKey(i) ? _animations[i] : null;
+  double value(int i) => _animations.containsKey(i) ? _animations[i]!.value : 0;
+
+  List<int> keys() {
+    return _animations.keys.toList();
+  }
+
+  void makeTrailDone(int from, int to) {
+    for (int i=from;i<to;++i) {
+      _animations[i]!.whenDone(_animations[i+1]!);
+    }
+  }
+
+  void makeTrailHalf(int from, int to) {
+    for (int i=from;i<to-1;++i) {
+      _animations[i]!.whenHalf(_animations[i+1]!);
+    }
+  }
+
+  void whenDone(int a, int b) {
+    _animations[a]!.whenDone(_animations[b]!);
+  }
+
+  void dispose() {
+    _animations.forEach((key, value) => value.dispose());
+  }
+
+  void start({int? at}) {
+    if (at != null) {
+      _animations[at]!.start();
+    } else {
+      _animations[0]!.start();
+    }
+  }
+}

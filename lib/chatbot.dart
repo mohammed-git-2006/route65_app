@@ -126,9 +126,9 @@ class _ChatBotPageState extends State<ChatBotPage> {
                           padding: EdgeInsets.all(10),
 
                           child: Directionality(
-                            textDirection: openai.isArabic(isUser ? conv['content'] : jsonDecode(conv['content'])['messages'][0]['content']) ? TextDirection.rtl : TextDirection.ltr,
+                            textDirection: openai.isArabic(conv['content']) ? TextDirection.rtl : TextDirection.ltr,
                             child: MarkdownBody(
-                              data: isUser ? conv['content'] : (jsonDecode(conv['content'])['messages'][0]['content']),
+                              data: conv['content'],
                               styleSheet: MarkdownStyleSheet(
                                 p: TextStyle(color: isUser ? Colors.white : Colors.black,), // paragraph text
                                 strong: TextStyle(
@@ -217,23 +217,22 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
     final message = await openai.sendMessage(messageContent, userProfile.uid!);
     if(message.status == OpenAIStatus.SUCCESFULL) {
-      final response = jsonDecode(message.content) as Map<String, dynamic>;
-      if (response['error']) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('OpenAI API message :\n${message.content}'),));
-        return;
-      }
-
+      final response = message.content;
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response),));
       setState(() {
         openai.conversation.removeAt(openai.conversation.length-1);
         openai.conversation.add({
           'sender' : 'system',
-          'content' : jsonEncode(response)
+          'content' : response
         });
+
+        print(openai.conversation);
       });
 
       scrollController.animateTo(scrollController.position.maxScrollExtent  + MediaQuery.of(context).size.height / 2.0, duration: Durations.medium1, curve: Curves.easeIn,);
     } else {
       setState(() {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed contact with the ChatGPT agent')));
         openai.conversation.removeAt(openai.conversation.length-1);
         result = message.content;
       });

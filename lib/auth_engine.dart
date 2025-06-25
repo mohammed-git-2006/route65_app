@@ -32,7 +32,6 @@ class UserProfile {
   * When ever you want to add a firestore value for the user profile that is readable from the shared_preferences and firestore, you should add them in the VARS-area
   * and then to the toJson(), and then to the fromJson()
   * */
-
   Map<String, dynamic> toJson() => {
     'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders,
     'waiting_order' : waiting_order, 'coc' : coc, 'self-vouchers' : selfVouchers
@@ -52,12 +51,12 @@ class UserProfile {
   Future<void> saveToPref() async {
     final pref = await SharedPreferences.getInstance();
     pref.setString('data', jsonEncode(toJsonPref()));
-
     return;
   }
 
   void fromJson({required Map<String, dynamic> data, bool? pref}) {
     liked.clear();
+    selfVouchers.clear();
     name = data['n'];
     pic = data['pic'];
     location = data['loc'];
@@ -69,8 +68,15 @@ class UserProfile {
     coc = data['coc'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
     final selfVouchersPlaceholder = data['self-vouchers'] as List<dynamic>;
-    selfVouchersPlaceholder.map((e) => selfVouchers.add(e));
-    for(final item in likedPlaceholder) liked.add(int.parse('$item'));
+    // selfVouchersPlaceholder.map((e) => selfVouchers.add(e));
+    for(final item in selfVouchersPlaceholder) {
+      selfVouchers.add(item as String);
+    }
+
+    for(final item in likedPlaceholder) {
+      liked.add(item as int);
+    }
+
     if(pref != null && pref) uid = data['uid'];
   }
 
@@ -105,6 +111,7 @@ class UserProfile {
    */
   Future<void> updateVouchersInCloud() async {
     await FirebaseFirestore.instance.collection('app-users').doc(uid).set({'self-vouchers' : selfVouchers}, SetOptions(merge: true));
+    await saveToPref();
   }
 
   /*
@@ -142,6 +149,9 @@ class UserProfile {
     fromJson(data: cloudData.data()!, pref: false);
   }
 
+  /*
+   * Update the fcm token on every launch of the app
+   */
   Future<void> updateFCM(String? fcm) async {
     FirebaseFirestore.instance.collection('app-users').doc(uid).set({'fcm' : fcm}, SetOptions(merge: true));
   }
@@ -213,6 +223,14 @@ class AuthEngine {
     }
   }
 
+  static Future<void> signOut() async {
+    FirebaseAuth.instance.signOut();
+    GoogleSignIn().signOut();
+    final pref = await SharedPreferences.getInstance();
+    pref.clear();
+    return;
+  }
+
   Future<AuthResult> loginFacebook() async {
     try {
       final response = await FacebookAuth.instance.login(permissions: ['public_profile']);
@@ -250,6 +268,7 @@ class AuthEngine {
       }
 
       await userProfile.fromCloud();
+      print('from cloud --> completed ? ${userProfile.completed}');
       return AuthResult(userProfile.completed! ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '$signInResult');
     } catch(err) {
       return AuthResult(CheckResult.ERROR, '$err');

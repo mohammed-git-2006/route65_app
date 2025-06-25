@@ -26,6 +26,7 @@ import 'dart:math' as math;
 import 'dart:developer' as console;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'l10n/animation_set.dart';
 
 class HomePage extends StatefulWidget {
@@ -290,6 +291,77 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       tokenUpAni.start();
       catsDetails[0][4].start();
     });
+
+    if (userProfile.waiting_order??false) {
+      try {
+        final Uri _url = Uri.parse("https://www.route-65-dashboard.com/api/order_status");
+        final _res = await http.post(_url, body: {
+          'key' : userProfile.coc
+        });
+
+        if (_res.statusCode == 200) {
+          final _decoded = jsonDecode(_res.body) as Map<String, dynamic>;
+          if (_decoded['server_err'] as bool == false) {
+            onStatusDone();
+          }
+        }
+      } finally {}
+    }
+
+
+    checkAdvertisement();
+  }
+
+  Future<bool> getAdvertisementState() async {
+    try {
+      final Uri _url = Uri.parse("https://www.route-65-dashboard.com/api/advertisement");
+      final _res = await http.get(_url);
+      final _map = jsonDecode(_res.body) as Map<String, dynamic>;
+      final givenId = _map['id'];
+
+      if (givenId == -1) return true;
+
+      final _dir = await getApplicationDocumentsDirectory();
+      File _file = File('${_dir.path}/advertisement_id.txt');
+
+      if (await _file.exists()) {
+        final fileContent = await _file.readAsString();
+        final lastAdShown = int.tryParse(fileContent);
+
+        if (lastAdShown == null) {
+          _file.writeAsString('$givenId');
+        } else {
+          bool r = lastAdShown != givenId;
+          if (r) {
+            _file.writeAsString('$givenId', mode: FileMode.write);
+          } else {
+            return false;
+          }
+        }
+
+        return true;
+      } else {
+        await (await _file.create()).writeAsString('$givenId');
+        return true;
+      }
+    } catch (e) {
+      return true;
+    }
+  }
+
+  void checkAdvertisement() async {
+    bool showAd = await getAdvertisementState();
+
+    if (showAd) {
+      showModalBottomSheet(context: context, isScrollControlled: true, builder: (context) {
+        final size = MediaQuery.of(context).size;
+        return SizedBox(
+          height: size.height * .75,
+          width: double.infinity,
+          child: WebViewWidget(controller: new WebViewController()..loadRequest(Uri.parse('https://www.route-65-dashboard.com/ad'))),
+        );
+      },);
+    }
   }
 
   int currentPage = 1;
@@ -307,7 +379,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     nameAnimation.start();
 
     mapAnimation.init(this, .0, 1.0, Durations.long1, Curves.decelerate);
-    basketAnimation.init(this, .0, 1.0, Durations.medium1, Curves.decelerate);
+    basketAnimation.init(this, .0, 1.0, Durations.medium1, Curves.easeInBack);
 
     loadData();
   }
@@ -726,7 +798,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                         [userProfile.location!, 'assets/map_pin.png', false],
                         [userProfile.phone!, 'assets/telephone.png', false],
                         ['${dic.no_orders} ${userProfile.no_orders.toString()}', 'assets/burger.png', true, false],
-                        ['${userProfile.tokens?.toStringAsFixed(2)} ${(userProfile.tokens! > 10 ? dic.points_1 : dic.points_2)}', 'assets/coin.png', true, true]
+                        ['${userProfile.tokens?.toStringAsFixed(2)} ${(userProfile.tokens! > 10 ? dic.points_1 : dic.points_2)}', 'assets/coin.png', true, true],
+
                       ].map((item) {
                         return Container(
                           margin: EdgeInsets.all(5),
@@ -757,16 +830,63 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       }).toList(),),
                     ),
 
-                    ElevatedButton(
-                      child: Text('Reset App'),
-                      onPressed: () {
-                        SharedPreferences.getInstance().then((prefs) {
-                          prefs.clear();
-                          FirebaseAuth.instance.signOut();
-                          FirebaseFirestore.instance.collection('app-users').doc(userProfile.uid).delete();
-                          GoogleSignIn().signOut();
-                          Navigator.of(context).popAndPushNamed('/login');
-                        });
+                    Container(
+                      margin: EdgeInsets.only(left: 15, right: 15, bottom: 25, top: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                          color: cs.secondary.withAlpha(15),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.grey.shade300, width: 2)
+                      ),
+
+                      child: ListTile(
+                        // leading: Image.asset('assets/instagram.png', height: 35,),
+                        leading: FaIcon(FontAwesomeIcons.instagram, color: cs.primary, size: 35,),
+                        title: Text(dic.topfans_instagram),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) {
+                            final controller = WebViewController()
+                              ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                              ..loadRequest(Uri.parse('https://www.route-65-dashboard.com/topfan'));
+
+
+                            return Scaffold(
+                              body: Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                child: WebViewWidget(controller: controller, ),
+                              ),
+                            );
+                          }));
+                        },
+
+                      )
+                    ),
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                          child: Row(spacing: 10, children: [
+                            [dic.signout, () {
+                              AuthEngine.signOut().then((_) => Navigator.of(context).popAndPushNamed('/login') );
+                            }, Colors.red.shade800],
+                            [dic.support, () {}, cs.secondary],
+                            ['TS1', () {
+                              userProfile.update(completed: false);
+                              FirebaseAuth.instance.signOut();
+                              Navigator.of(context).popAndPushNamed('/login');
+                            }, Colors.amber.shade700]
+                          ].map((i) {
+                            return Expanded(child: OutlinedButton(onPressed: i[1] as Function(), style: OutlinedButton.styleFrom(side: BorderSide(
+                              color: i[2] as Color,
+                              width: 3
+                            )),child: Text(i[0]  as String, style: TextStyle(
+                              color: i[2] as Color,
+                              fontWeight: FontWeight.bold,
+                            ),),));
+                          }).toList(),),
+                        );
                       },
                     )
                   ])
@@ -775,7 +895,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 // --PAGE-HOME
                 SingleChildScrollView(
                   child: Column(children: [
-
                     // --APP-BAR
                     Container(
                       width: size.width,
@@ -940,7 +1059,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                               padding: EdgeInsets.all(10),
 
-                              child: Center(child: Text(dic.first_time_order, textAlign: TextAlign.center,style: TextStyle(decoration: TextDecoration.underline),))
+                              child: Center(child: Text(dic.first_time_order, textAlign: TextAlign.center,style: TextStyle(decoration: TextDecoration.underline,
+                                color:cs.secondary, fontWeight:FontWeight.bold),))
                             ),
                           ),
                         ),
@@ -954,7 +1074,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 onTap: () {
                                   Navigator.pushNamed(context, '/tokens_redeem', arguments: {
                                     'userProfile' : userProfile
-                                  });
+                                  }).then((value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        final rMap = value as Map<String, dynamic>;
+                                        usingVoucher = true;
+                                        checkingVoucher = false;
+                                        voucherDiscountPerc = rMap['perc'] as double;
+                                        voucherController.text = rMap['voucher'] as String;
+                                      });
+                                    }
+
+                                    setState(() {
+                                      loading = true;
+                                      connectionError = false;
+                                    });
+                                    loadTokensFromServer().then((loadingR) {
+                                      setState(() {
+                                        loading = false;
+                                        connectionError = !loadingR;
+                                      });
+                                    });
+                                  },);
                                 },
                                 child: Container(
                                   padding: EdgeInsets.all(15),
@@ -995,6 +1136,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             ),
                           ],
                         ),),
+
 
                         getMenuItemsView(selectedCategory),
 
@@ -1449,6 +1591,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             Navigator.of(context).pushNamed('/confirm_order', arguments: body).then((r) {
                               if (r != null) {
                                 userProfile.update(waiting_order: true, coc: r as String);
+
+                                if (userProfile.selfVouchers.contains(voucherController.text)) {
+                                  setState(() {
+                                    userProfile.removeVoucher(voucherController.text);
+                                  });
+                                }
+
+                                voucherController.clear();
+
                                 loadServerOrderData().then((_) {
                                   if (mounted) {
                                     setState(() {
@@ -1496,6 +1647,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           Container(
             color: cs.secondary.withAlpha(50),
             height: 70,
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, textDirection: isAr ? TextDirection.ltr : TextDirection.rtl, children: [
               // --NAV-BAR
               GestureDetector(onTap: () {

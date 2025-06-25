@@ -327,7 +327,7 @@ class L10nEn extends L10n {
   String get no_vouchers_for_redeem => 'No vouchers for redeem';
 
   @override
-  String get rt_header => 'order from the app and get points to redeem !';
+  String get rt_header => 'order from the app and get points to redeem for discounts !';
 
   @override
   String get first_time_order => 'First time ordering from route 65 ? or don\'t know what to order?';
@@ -343,4 +343,25 @@ class L10nEn extends L10n {
 
   @override
   String get route65_recommendation => 'What Route 65 recommend for you';
+
+  @override
+  String get forevery => 'for every # you get *% discount';
+
+  @override
+  String get use => 'use';
+
+  @override
+  String get redeem => 'redeem';
+
+  @override
+  String get no_tokens_enough => 'No tokens enough for redeem';
+
+  @override
+  String get signout => 'Sign out';
+
+  @override
+  String get support => 'call center';
+
+  @override
+  String get topfans_instagram => 'top fan page';
 }

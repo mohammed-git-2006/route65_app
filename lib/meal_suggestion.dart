@@ -335,6 +335,8 @@ class _MealSuggestionPageState extends State<MealSuggestionPage> with TickerProv
                                 spacing: 10,
                                 runSpacing: 10,
                                 children: (item['c'] as List<dynamic>).map((component) {
+                                  final cl = menuData?['cs'][component as String] as List<dynamic>;
+
                                   return Container(
                                     height: 32.5,
                                     padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
@@ -342,7 +344,7 @@ class _MealSuggestionPageState extends State<MealSuggestionPage> with TickerProv
                                       color: cs.secondary.withOpacity(.7),
                                       borderRadius: BorderRadius.circular(15)
                                     ),
-                                    child: Text(menuData?['cs'][component as String][0], style: TextStyle(color: cs.surface, fontSize: 16, fontWeight: FontWeight.bold),),
+                                    child: Text(cl[isAr ? 1 : 0], style: TextStyle(color: cs.surface, fontSize: 16, fontWeight: FontWeight.bold),),
                                   );
                                 }).toList(),
                               ),

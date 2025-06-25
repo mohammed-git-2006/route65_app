@@ -734,7 +734,7 @@ abstract class L10n {
   /// No description provided for @rt_header.
   ///
   /// In en, this message translates to:
-  /// **'order from the app and get points to redeem !'**
+  /// **'order from the app and get points to redeem for discounts !'**
   String get rt_header;
 
   /// No description provided for @first_time_order.
@@ -766,6 +766,48 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'What Route 65 recommend for you'**
   String get route65_recommendation;
+
+  /// No description provided for @forevery.
+  ///
+  /// In en, this message translates to:
+  /// **'for every # you get *% discount'**
+  String get forevery;
+
+  /// No description provided for @use.
+  ///
+  /// In en, this message translates to:
+  /// **'use'**
+  String get use;
+
+  /// No description provided for @redeem.
+  ///
+  /// In en, this message translates to:
+  /// **'redeem'**
+  String get redeem;
+
+  /// No description provided for @no_tokens_enough.
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens enough for redeem'**
+  String get no_tokens_enough;
+
+  /// No description provided for @signout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signout;
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'call center'**
+  String get support;
+
+  /// No description provided for @topfans_instagram.
+  ///
+  /// In en, this message translates to:
+  /// **'top fan page'**
+  String get topfans_instagram;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

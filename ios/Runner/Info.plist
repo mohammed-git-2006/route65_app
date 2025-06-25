@@ -24,7 +24,7 @@
 
     <!-- For Camera Access -->
     <key>NSCameraUsageDescription</key>
-    <string>We need camera access for ...</string>
+    <string>We need camera access to scan the QR code to redeem tokens in the app</string>
 
     <!-- For Facebook SDK -->
     <key>FacebookAppID</key>
@@ -38,6 +38,14 @@
       <string>fbauth2</string>
       <string>fbshareextension</string>
     </array>
+
+    <key>NSUserTrackingUsageDescription</key>
+    <string>This app uses tracking to improve notifications and marketing.</string>
+    <key>UNNotificationAlertStyle</key>
+    <string>Alert</string>
+
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
 
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

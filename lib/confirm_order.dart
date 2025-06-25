@@ -423,7 +423,7 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
               onTap: isButtonActive ? () => finishButtonFunc(orderInformation) : null,
               child: Container(
                 decoration: BoxDecoration(
-                    color:  !isButtonActive ? Colors.grey.shade400 : cs.secondary
+                    color: !isButtonActive ? Colors.grey.shade400 : cs.secondary
                 ),
                 width: size.width,
                 padding: EdgeInsets.symmetric(horizontal: 0, vertical: MediaQuery.of(context).padding.bottom),

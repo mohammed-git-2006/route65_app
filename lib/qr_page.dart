@@ -71,7 +71,7 @@ class _QrPageState extends State<QrPage> {
                                       ],
                                     ),
                                   ),
-                                  Text(dic.congrats.replaceAll('-1', points.toString()).replaceAll('-2', points > 10.0 ? dic.points_1 : dic.points_2)),
+                                  Text(dic.congrats.replaceAll('-1', points.toStringAsFixed(1)).replaceAll('-2', points > 10.0 ? dic.points_1 : dic.points_2)),
                                   ElevatedButton(onPressed: () {
                                     setState(() {
                                       sendingQR = false;
@@ -113,28 +113,30 @@ class _QrPageState extends State<QrPage> {
                 ),
 
                 Positioned(right: 0, top: 0,child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(0),
-                      border: Border(top: BorderSide(width: qrDw, color: Colors.black), right: BorderSide(width: qrDw, color: Colors.black)),)
-                ),),
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(0),
+                    border: Border(top: BorderSide(width: qrDw, color: Colors.black), right: BorderSide(width: qrDw, color: Colors.black)),
+                  )),
+                ),
 
                 Positioned(right: 0, bottom: 0,child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(0),
-                      border: Border(bottom: BorderSide(width: qrDw, color: Colors.black), right: BorderSide(width: qrDw, color: Colors.black)),)
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(0),
+                    border: Border(bottom: BorderSide(width: qrDw, color: Colors.black), right: BorderSide(width: qrDw, color: Colors.black)),)
                 ),),
 
                 Positioned(left: 0, bottom: 0,child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(0),
-                      border: Border(left: BorderSide(width: qrDw, color: Colors.black), bottom: BorderSide(width: qrDw, color: Colors.black)),)
-                ),),
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(0),
+                    border: Border(left: BorderSide(width: qrDw, color: Colors.black), bottom: BorderSide(width: qrDw, color: Colors.black)),)
+                  ),
+                ),
               ],
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:route65/auth_engine.dart';
 import 'package:route65/confirm_order.dart';
@@ -82,7 +83,7 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('en'),
+      locale: const Locale('ar'),
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -121,7 +122,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     p3t1 = AnimationSet(), p3t2 = AnimationSet(), p3input = AnimationSet(), p5t1 = AnimationSet(), p5t2 = AnimationSet(), p5dropdown = AnimationSet();
 
   final authEng = AuthEngine();
-  final p2NameController = TextEditingController(), p3controller = TextEditingController();
+  final p2NameController = TextEditingController(), p3controller = TextEditingController(),  codeController = TextEditingController();
   final p2InputNode = FocusNode();
   String p2NameHolder = '', _verificationId = '';
   String? viewTitle = null;
@@ -131,7 +132,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   List<AnimationSet> p3inputs = [];
   List<String> authCode = List.generate(6, (index) => ' ');
 
-  bool authCodeComplete = false, phoneComplete = false;
+  bool authCodeComplete = false, phoneComplete = false, checkingPhone = false;
 
   @override
   void initState()  {
@@ -337,9 +338,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       body: PageView(
         controller: pageController,
         physics: NeverScrollableScrollPhysics(),
-        onPageChanged: (new_index) {
-
-        },
         children: [
           Stack(
             children: [
@@ -446,7 +444,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
             ),),
 
-            Positioned(bottom: size.width * .1, left: size.width * .1, right: size.width * .1, child: Column(
+            Positioned(bottom: size.width * .1 + MediaQuery.of(context).padding.bottom, left: size.width * .1, right: size.width * .1, child: Column(
               spacing: 15,
               children: [
                 Opacity(
@@ -468,12 +466,36 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       onPressed: () {
                         if (p2NameController.text.trim().isEmpty) {
                           FocusScope.of(context).requestFocus(p2InputNode);
-
                           getBottomSheet([
                             Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
                             Text(dic.name_error, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 16),)
                           ]);
                         } else {
+                          if (FirebaseAuth.instance.currentUser?.phoneNumber != null) {
+                            setState(() {
+                              areasList = [
+                                dic.a3,
+                                dic.a4,
+                                dic.a5,
+                                dic.a6,
+                                dic.a7,
+                                dic.a8,
+                                dic.a9,
+                                dic.a10,
+                                dic.am,
+                                dic.aa,
+                                dic.ah,
+                                dic.as,
+                                dic.ak
+                              ];
+
+                              selectedArea = areasList[0];
+                            });
+                            pageController.animateToPage(4, duration: Durations.short2, curve: Curves.easeIn);
+                            p5t1.start();
+                            return;
+                          }
+
                           pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
                           Future.delayed(Durations.long1).then((_) => p3t1.start());
                         }
@@ -494,10 +516,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             Positioned(top: size.width * .0, left: size.width * .05, right: size.width * .05, child: Column(
               spacing: 45,
               children: [
-                /*Wrap(spacing: 15, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Opacity(opacity: p3t1.value, child: Text(dic.enter_phone, style: TextStyle(fontSize: 17),)),
-                  Opacity(opacity: p3t2.value, child: Text('📞', style: TextStyle(fontSize: 17)))
-                ],),*/
                 Opacity(
                   opacity: p3t1.value,
                   child: SizedBox(
@@ -529,14 +547,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         children: [
                           Icon(Icons.phone, color: cs.secondary,),
                           SizedBox(width: 6,),
-                          Transform.translate(offset: Offset(0, 2), child: Text('07', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: size.width * .05),)),
+                          Transform.translate(offset: Offset(0, -1), child: Text('07', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: size.width * .05),)),
                           Expanded(
                             child: TextField(
                               maxLength: 8,
                               controller: p3controller,
-                              textAlignVertical: TextAlignVertical.bottom,
+                              textAlignVertical: TextAlignVertical.center,
                               keyboardType: TextInputType.number,
-                              style: TextStyle(letterSpacing: 2, fontSize: 14),
+                              style: TextStyle(letterSpacing: 2, fontSize: 21),
                               decoration: InputDecoration(
                                 counterText: '',
                                 hintText: '...',
@@ -554,7 +572,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
             // --PAGE-PHONE
 
-            Positioned(bottom: size.width * .05, left: size.width * .05, right: size.width * .05, child: Row(
+            Positioned(bottom: size.width * .05 + MediaQuery.of(context).padding.bottom, left: size.width * .05, right: size.width * .05, child: Row(
               spacing: 15,
               children: [
                 ElevatedButton(
@@ -568,7 +586,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(disabledBackgroundColor: Colors.grey.shade300),
-                    onPressed: !phoneComplete ? null : () {
+                    onPressed: !phoneComplete || checkingPhone ? null : () {
                       setState(() {
                         phoneComplete = false;
                       });
@@ -578,6 +596,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       // });
 
                       p3controller.text = p3controller.text.split('').map((char) => PhoneNumberFormatter.mapping.keys.contains(char) ? PhoneNumberFormatter.mapping[char] : char).toList().join('');
+                      finalPhoneNumberTex = p3controller.text;
+
+                      setState(() {
+                        checkingPhone = true;
+                      });
 
                       FirebaseAuth.instance.verifyPhoneNumber(
                         verificationCompleted: (phoneAuthCredential) {
@@ -594,6 +617,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           });
                         }, codeSent: (verificationId, forceResendingToken) {
                           pageController.nextPage(duration: Durations.short2, curve: Curves.easeInBack).then((_) {
+                            setState(() {
+                              checkingPhone = false;
+                            });
                             p4t1.start();
                           });
 
@@ -628,16 +654,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             Positioned(top: size.width * 0.1, left: 0, right: 0, child: Column(
               spacing: 45,
               children: [
-                /*Wrap(spacing: 15, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Opacity(opacity: p4t1.value, child: Text(dic.phone_check, style: TextStyle(fontSize: 17),)),
-                  Opacity(opacity: p4t2.value, child: Text('📩', style: TextStyle(fontSize: 17)))
-                ],),*/
-
                 SizedBox(
                   // width: size.width * .5,
                   height: size.height * .25,
                   child: Center(
-
                     child: Lottie.asset('assets/code_animation.json'),
                   ),
                 ),
@@ -647,6 +667,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 Directionality(
                   textDirection: TextDirection.ltr,
                   child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: TextField(
+                      maxLength: 6,
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      controller: codeController,
+                      onChanged: (_f) {
+                        setState(() {
+                          if (_f.length == 6) FocusScope.of(context).unfocus();
+                        });
+                      },
+                      style: TextStyle(
+                        letterSpacing: 15,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+
+                  /*child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 15),
                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center, spacing: 10,
                       children: List.generate(_phoneControllers.length, (index) {
@@ -680,12 +720,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         );
                       },),
                     ),
-                  ),
+                  ),*/
                 )
               ],
             ),),
 
-            Positioned(bottom: size.width * .05, left: size.width * .05, right: size.width * .05, child: Row(
+            Positioned(bottom: size.width * .05 + MediaQuery.of(context).padding.bottom, left: size.width * .05, right: size.width * .05, child: Row(
               spacing: 15,
               children: [
                 ElevatedButton(
@@ -698,11 +738,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ) ,
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: !authCodeComplete ? null : () async {
-                      String smsCode = '';
-                      for(String char in authCode) {
-                        smsCode += char;
-                      }
+                    onPressed: codeController.text.length != 6 ? null : () async {
+                      String smsCode = codeController.text;
 
                       try {
                         final authCred  = PhoneAuthProvider.credential(verificationId: _verificationId, smsCode: smsCode);
@@ -729,10 +766,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         pageController.nextPage(duration: Durations.short2, curve: Curves.easeInBack);
                         p5t1.start();
                       } catch(err) {
-
                         getBottomSheet([
                           Icon(Icons.error_outline, color: Colors.red.shade900, size: 70,),
-                          Text('$err'),
                           Text(dic.code_auth_err, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 15),)
                         ],);
                       }
@@ -752,11 +787,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
           Stack(children: [
             Positioned(left: size.width * .05, right: size.width * .05, top: size.width * .1, child: Column(spacing: 45, children: [
-              /*Row(spacing: 15, mainAxisSize: MainAxisSize.min, children: [
-                Opacity(opacity: p5t1.value, child: Text(dic.location, style: TextStyle(fontSize: 17),)),
-                Opacity(opacity: p5t2.value, child: Text('📍 🗺️', style: TextStyle(fontSize: 17)))
-              ],),*/
-
               SizedBox(
                 height: size.height * .3,
                 child: Lottie.asset('assets/map_animation.json'),
@@ -788,7 +818,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               )*/
             ],),),
 
-            Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05, child: ElevatedButton(
+            Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05+ MediaQuery.of(context).padding.bottom, child: ElevatedButton(
               child: Text(dic.continue_),
               onPressed: !userSelectedArea ?  null : () async {
                 pageController.nextPage(duration: Durations.short2, curve: Curves.easeIn);
@@ -806,10 +836,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 )
               ],
             )),
-            Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05, child: ElevatedButton(
+            Positioned(left: size.width * .05, right: size.width * .05, bottom: size.width * .05 + MediaQuery.of(context).padding.bottom, child: ElevatedButton(
               child: Text(dic.finish),
               onPressed: () async {
-                await authEng.userProfile.update(name: p2NameController.text, location: selectedArea, tokens: 0, completed: true, phone: '07${p3controller.text}', no_orders: 0);
+                await authEng.userProfile.update(name: p2NameController.text, location: selectedArea, tokens: 0, completed: true, phone:
+                    FirebaseAuth.instance.currentUser?.phoneNumber?.replaceAll('+962', '0'), no_orders: 0);
                 disposeAnimations();
                 Navigator.of(context).popAndPushNamed('/home');
               },
@@ -819,6 +850,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ),
     );
   }
+
+  String finalPhoneNumberTex = '';
 }
 
 

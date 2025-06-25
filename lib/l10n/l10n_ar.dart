@@ -327,7 +327,7 @@ class L10nAr extends L10n {
   String get no_vouchers_for_redeem => 'لا توجد قسائم للإستخدام';
 
   @override
-  String get rt_header => 'اطلب من التطبيق واحصل على على نقاط';
+  String get rt_header => 'اطلب من التطبيق واحصل على على نقاط!';
 
   @override
   String get first_time_order => 'أول مرّة تطلب من الروت؟ أو محتار؟';
@@ -343,4 +343,25 @@ class L10nAr extends L10n {
 
   @override
   String get route65_recommendation => 'شو اختارلك روت 65:';
+
+  @override
+  String get forevery => 'لكل # تحصل على *% خصم';
+
+  @override
+  String get use => 'استخدم';
+
+  @override
+  String get redeem => 'إستبدل';
+
+  @override
+  String get no_tokens_enough => 'لا توجد نقاط كافية';
+
+  @override
+  String get signout => 'تسجيل الخروج';
+
+  @override
+  String get support => 'الكول سنتر';
+
+  @override
+  String get topfans_instagram => 'توب فان';
 }

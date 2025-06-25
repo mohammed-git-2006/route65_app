@@ -106,10 +106,17 @@
   "as" : "سكن الأطبّاء",
   "ak" : "الخزّان",
   "no_vouchers_for_redeem" : "لا توجد قسائم للإستخدام",
-  "rt_header" : "اطلب من التطبيق واحصل على على نقاط",
+  "rt_header" : "اطلب من التطبيق واحصل على على نقاط!",
   "first_time_order" : "أول مرّة تطلب من الروت؟ أو محتار؟",
   "sug_beef" : "لحمة",
   "sug_chicken" : "دجاج",
   "sug_hotdog" : "هوت دوق",
-  "route65_recommendation" : "شو اختارلك روت 65:"
+  "route65_recommendation" : "شو اختارلك روت 65:",
+  "forevery" : "لكل # تحصل على *% خصم",
+  "use" : "استخدم",
+  "redeem" : "إستبدل",
+  "no_tokens_enough" : "لا توجد نقاط كافية",
+  "signout" : "تسجيل الخروج",
+  "support" : "الكول سنتر",
+  "topfans_instagram" : "توب فان"
 }
