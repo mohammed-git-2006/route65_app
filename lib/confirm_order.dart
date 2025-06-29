@@ -426,7 +426,7 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
                     color: !isButtonActive ? Colors.grey.shade400 : cs.secondary
                 ),
                 width: size.width,
-                padding: EdgeInsets.symmetric(horizontal: 0, vertical: MediaQuery.of(context).padding.bottom),
+                padding: EdgeInsets.symmetric(horizontal: 0, vertical: MediaQuery.of(context).padding.bottom + 15),
                 child: Center(child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: 15,

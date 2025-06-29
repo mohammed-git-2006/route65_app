@@ -65,6 +65,8 @@ class _TokensRedeemState extends State<TokensRedeem>  with TickerProviderStateMi
 
       calculateOffset();
 
+      await userProfile?.loadVouchers();
+
       setState(() {
         loading = false;
         connectionErr = false;
@@ -268,7 +270,7 @@ class _TokensRedeemState extends State<TokensRedeem>  with TickerProviderStateMi
             tokensPlaceholder = redeemInfo['final_tokens'] * 1.0;
             calculateOffset();
             userProfile?.update(tokens: tokensPlaceholder);
-            userProfile?.addSelfVoucher(redeemInfo['code']).then((_) {
+            userProfile?.loadVouchers().then((_) {
               setState(() {});
             });
           }

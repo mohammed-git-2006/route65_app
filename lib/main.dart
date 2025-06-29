@@ -320,7 +320,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   void facebookLoginCallback() async {
-    final result = await authEng.loginFacebook();
+    // final result = await authEng.loginFacebook();
   }
 
   // --VAR-AREA

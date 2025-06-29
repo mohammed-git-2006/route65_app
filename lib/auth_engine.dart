@@ -1,15 +1,9 @@
-
-
-
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+// import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +28,7 @@ class UserProfile {
   * */
   Map<String, dynamic> toJson() => {
     'n' : name, 'tok' : tokens, 'p' : phone, 'loc' : location, 'pic' : pic, 'comp' : completed, 'fcm' : fcm, 'liked' : liked, 'no_orders' : no_orders,
-    'waiting_order' : waiting_order, 'coc' : coc, 'self-vouchers' : selfVouchers
+    'waiting_order' : waiting_order, 'coc' : coc
   };
 
   Map<String, dynamic> toJsonPref()  {
@@ -42,10 +36,10 @@ class UserProfile {
   }
 
   void fromInstance() {
-    final currUser = FirebaseAuth.instance.currentUser!;
-    name = currUser.displayName!;
-    pic = currUser.photoURL!;
-    uid = currUser.uid;
+    final   currUser = FirebaseAuth.instance.currentUser!;
+    name =  currUser.displayName!;
+    pic  =  currUser.photoURL!;
+    uid  =  currUser.uid;
   }
 
   Future<void> saveToPref() async {
@@ -67,11 +61,11 @@ class UserProfile {
     no_orders = data['no_orders'];
     coc = data['coc'];
     final likedPlaceholder = data['liked'] as List<dynamic>;
-    final selfVouchersPlaceholder = data['self-vouchers'] as List<dynamic>;
-    // selfVouchersPlaceholder.map((e) => selfVouchers.add(e));
-    for(final item in selfVouchersPlaceholder) {
-      selfVouchers.add(item as String);
-    }
+    // final selfVouchersPlaceholder = data['self-vouchers'] as List<dynamic>;
+
+    // for(final item in selfVouchersPlaceholder) {
+    //   selfVouchers.add(item as String);
+    // }
 
     for(final item in likedPlaceholder) {
       liked.add(item as int);
@@ -109,19 +103,32 @@ class UserProfile {
   /*
    * a tailor-made simple function to update the self-vouchers on the firestore-client side, whether remove or add, it's called from [addSelfVoucher, removeVoucher]
    */
-  Future<void> updateVouchersInCloud() async {
-    await FirebaseFirestore.instance.collection('app-users').doc(uid).set({'self-vouchers' : selfVouchers}, SetOptions(merge: true));
-    await saveToPref();
+  // Future<void> updateVouchersInCloud() async {
+  //   await FirebaseFirestore.instance.collection('app-users').doc(uid).set({'self-vouchers' : selfVouchers}, SetOptions(merge: true));
+  //   await saveToPref();
+  // }
+
+  Future<void> loadVouchers() async {
+    final _ref = FirebaseFirestore.instance.collection('app-users').doc(uid);
+    final firestoreRes = await _ref.get();
+    try {
+      selfVouchers = List<String>.from(firestoreRes.get('self-vouchers') ?? []);
+    } catch (err) {
+      _ref.set({'self-vouchers' : <String>[]}, SetOptions(merge: true));
+      selfVouchers = <String>[];
+    }
   }
 
   /*
    * if the selfVouchers already contains the voucher return (this case is simply impossible, but why not), else add it to the string list and then call (updateVouchersInCloud)
-   */
-  Future<void> addSelfVoucher(String voucher) async {
-    if (selfVouchers.contains(voucher)) return;
-    selfVouchers.add(voucher);
-    updateVouchersInCloud();
-  }
+   * Removed this future, since the voucher string code is updated from the server-side to the firestore collection directly
+   * only keeping removeVoucher, and added the loadVouchers to load the vouchers from the firestore
+   */ 
+  // Future<void> addSelfVoucher(String voucher) async {
+  //   if (selfVouchers.contains(voucher)) return;
+  //   selfVouchers.add(voucher);
+  //   updateVouchersInCloud();
+  // }
 
   /*
   * if the vouchers are empty (which is also semi-impossible case) return, else search and remove, then call db-update
@@ -129,7 +136,9 @@ class UserProfile {
   Future<void> removeVoucher(String voucher) async {
     if (selfVouchers.isEmpty) return;
     selfVouchers.remove(voucher);
-    updateVouchersInCloud();
+    FirebaseFirestore.instance.collection('app-users').doc(uid).update({
+      'self-vouchers' : FieldValue.arrayRemove([voucher])
+    });
   }
 
   /*
@@ -231,21 +240,21 @@ class AuthEngine {
     return;
   }
 
-  Future<AuthResult> loginFacebook() async {
-    try {
-      final response = await FacebookAuth.instance.login(permissions: ['public_profile']);
+  // Future<AuthResult> loginFacebook() async {
+  //   try {
+  //     final response = await FacebookAuth.instance.login(permissions: ['public_profile']);
 
-      if (response.status == LoginStatus.success) {
-        final accessToken = response.accessToken;
-        final userData = await FacebookAuth.instance.getUserData();
-      }
+  //     if (response.status == LoginStatus.success) {
+  //       final accessToken = response.accessToken;
+  //       final userData = await FacebookAuth.instance.getUserData();
+  //     }
 
-      // return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '');
-      return AuthResult(CheckResult.ERROR, '---- TEST ----');
-    } catch (err) {
-      return AuthResult(CheckResult.ERROR, '$err');
-    }
-  }
+  //     // return AuthResult(userProfile.completed ? CheckResult.SUCCESS : CheckResult.FIRST_TIME, '');
+  //     return AuthResult(CheckResult.ERROR, '---- TEST ----');
+  //   } catch (err) {
+  //     return AuthResult(CheckResult.ERROR, '$err');
+  //   }
+  // }
 
   Future<AuthResult> loginGoogle() async {
     try {

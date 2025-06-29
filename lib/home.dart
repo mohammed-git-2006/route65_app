@@ -761,7 +761,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
             padding: EdgeInsets.only(left:10, right:10, top:MediaQuery.of(context).padding.top, bottom:15),
             // margin: EdgeInsets.only(left: 10, right: 10, bottom: 0),
             child: Row(crossAxisAlignment: CrossAxisAlignment.center, spacing: 5, children: [
-              Text(currentOrderStatus == 'PREP' ? dic.order_status_preparing : fromServerIsTakeaway ? dic.takeaway_ready : dic.order_status_on_road),
+              Text(currentOrderStatus == 'PREP' ? dic.order_status_preparing : fromServerIsTakeaway??false ? dic.takeaway_ready : dic.order_status_on_road),
               SizedBox(width:10),
               Transform.scale(
                 scale: currentOrderStatus == 'PREP' ? 1.75 : fromServerIsTakeaway ? 1.85 : 2,
@@ -871,12 +871,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             [dic.signout, () {
                               AuthEngine.signOut().then((_) => Navigator.of(context).popAndPushNamed('/login') );
                             }, Colors.red.shade800],
-                            [dic.support, () {}, cs.secondary],
-                            ['TS1', () {
-                              userProfile.update(completed: false);
-                              FirebaseAuth.instance.signOut();
-                              Navigator.of(context).popAndPushNamed('/login');
-                            }, Colors.amber.shade700]
+                            [dic.support, () {
+                              launchUrl(Uri.parse('tel:032030065'));
+                            }, cs.secondary],
                           ].map((i) {
                             return Expanded(child: OutlinedButton(onPressed: i[1] as Function(), style: OutlinedButton.styleFrom(side: BorderSide(
                               color: i[2] as Color,
@@ -1646,8 +1643,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
           Container(
             color: cs.secondary.withAlpha(50),
-            height: 70,
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+            height: 80,
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom, top: 12),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, textDirection: isAr ? TextDirection.ltr : TextDirection.rtl, children: [
               // --NAV-BAR
               GestureDetector(onTap: () {
