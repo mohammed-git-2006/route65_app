@@ -770,7 +770,7 @@ abstract class L10n {
   /// No description provided for @forevery.
   ///
   /// In en, this message translates to:
-  /// **'for every # you get *% discount'**
+  /// **'Every # tokens = *% discount'**
   String get forevery;
 
   /// No description provided for @use.
@@ -800,14 +800,44 @@ abstract class L10n {
   /// No description provided for @support.
   ///
   /// In en, this message translates to:
-  /// **'call center'**
+  /// **'Call Center'**
   String get support;
 
   /// No description provided for @topfans_instagram.
   ///
   /// In en, this message translates to:
-  /// **'top fan page'**
+  /// **'Instagram top fan page'**
   String get topfans_instagram;
+
+  /// No description provided for @apptopfans.
+  ///
+  /// In en, this message translates to:
+  /// **'App top users'**
+  String get apptopfans;
+
+  /// No description provided for @instagram_page.
+  ///
+  /// In en, this message translates to:
+  /// **'our instagram page'**
+  String get instagram_page;
+
+  /// No description provided for @facebook_page.
+  ///
+  /// In en, this message translates to:
+  /// **'our facebook page'**
+  String get facebook_page;
+
+  /// No description provided for @welcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get welcome;
+
+  /// No description provided for @yve.
+  ///
+  /// In en, this message translates to:
+  /// **'You have'**
+  String get yve;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

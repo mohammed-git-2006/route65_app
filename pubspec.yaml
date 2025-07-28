@@ -83,10 +83,14 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
-flutter_launcher_icons:
-  android: "launcher_icon"
+flutter_icons:
+  android: true
   ios: true
-  image_path: "assets/logo.png"
+  image_path: "logo.png"
+  image_path_ios: "logo.png"  # iOS still uses full image
+  adaptive_icon_background: "#03411F"  # or an image: "assets/icon_bg.png"
+  adaptive_icon_foreground: "logo.png"
+
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -103,7 +107,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/google_logo.png
-    - assets/facebook_logo.png
     - assets/route65_logo_bg.png
     - assets/token.png
     - assets/green_check.json
@@ -136,6 +139,7 @@ flutter:
     - assets/grilled_patty.png
     - assets/beef_patty.png
     - assets/instagram.png
+    - assets/facebook.png
     - assets/gift.gif
   #   - images/a_dot_ham.jpeg
 

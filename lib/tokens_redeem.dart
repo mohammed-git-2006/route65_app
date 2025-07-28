@@ -96,10 +96,9 @@ class _TokensRedeemState extends State<TokensRedeem>  with TickerProviderStateMi
     collection.whenDone(2, 3);
 
     _congratsAnimation.init(this, 0, 1.0, Duration(seconds: 4), Curves.linear);
+    _gifController = GifController(vsync: this);
 
     loadInfo();
-
-    // collection.start();
   }
 
   @override

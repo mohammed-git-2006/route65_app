@@ -9,13 +9,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:developer' as console;
-
+import 'dart:ui' as ui;
 import 'package:shared_preferences/shared_preferences.dart';
 
 
 class UserProfile {
   /// USER-PROF-VARS
-  String? name, uid, location, phone, pic, fcm, coc;
+  String? name, uid, location, phone, pic, fcm, coc; 
   bool? completed = false, waiting_order = false;
   double? tokens;
   int? no_orders;
@@ -139,6 +139,28 @@ class UserProfile {
     FirebaseFirestore.instance.collection('app-users').doc(uid).update({
       'self-vouchers' : FieldValue.arrayRemove([voucher])
     });
+  }
+
+  /*
+   * update the Language on the firebase side
+   */
+  Future<void> updateLanguage(String lang) async {
+    final langUpper = lang.toUpperCase();
+    FirebaseMessaging.instance.subscribeToTopic(langUpper == 'AR' ? 'Arabic' : 'English');
+    FirebaseFirestore.instance.collection('app-users').doc(uid).set({
+      'lang' : langUpper, 
+    }, SetOptions(merge: true));
+  }
+
+  /*
+   * increment the no_orders in firestore by 1 
+   */
+  Future<void> incrementOrders() async {
+    FirebaseFirestore.instance.collection('app-users').doc(uid).update({
+      'no_orders' : FieldValue.increment(1)
+    });
+
+    no_orders = (no_orders ?? 0) + 1;
   }
 
   /*
@@ -291,8 +313,6 @@ class AuthEngine {
   static void showLocalNotification(RemoteMessage message) async {
     final path = await getApplicationDocumentsDirectory();
 
-    console.log('PATH ---> $path');
-    String lang = 'AR';
     try {
       File saveFile = File('${path.path}/icon_primary.png');
       if (!(await saveFile.exists())) {
@@ -301,60 +321,57 @@ class AuthEngine {
         final imageResponse = await http.get(imageUrl);
         await saveFile.writeAsBytes(imageResponse.bodyBytes);
       }
-
-      File langFile = File('${path.path}/language.config');
-      lang = (await langFile.readAsString()).toUpperCase();
     } finally {}
 
     AndroidNotificationDetails? androidDetails;
     DarwinNotificationDetails? iosDetails;
     try {
-      File saveFile = File('${path.path}/notifications_primary.jgp');
+      File saveFile = File('${path.path}/notifications_primary.jpg');
 
       final Uri imageUrl = Uri.parse(message.notification!.android!.imageUrl!);
       final imageResponse = await http.get(imageUrl);
       await saveFile.writeAsBytes(imageResponse.bodyBytes);
 
       androidDetails = AndroidNotificationDetails(
-          appChannelId,
-          appChannelName,
-          channelDescription: 'your channel description',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: true,
-          styleInformation: BigPictureStyleInformation(
-            FilePathAndroidBitmap('${path.path}/notifications_primary.jgp'),
-            largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
-          )
-      );
-
-      iosDetails = DarwinNotificationDetails(
-
+        appChannelId,
+        appChannelName,
+        channelDescription: 'your channel description',
+        importance: Importance.max,
+        priority: Priority.high,
+        showWhen: true,
+        styleInformation: BigPictureStyleInformation(
+          FilePathAndroidBitmap('${path.path}/notifications_primary.jgp'),
+          largeIcon: FilePathAndroidBitmap('${path.path}/icon_primary.png'),
+        ),
       );
     } catch (e) {
       console.log('creating normal notification without image --> ${e}');
       androidDetails = AndroidNotificationDetails(
-          appChannelId,
-          appChannelName,
-          channelDescription: 'your channel description',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: true,
+        appChannelId,
+        appChannelName,
+        channelDescription: 'your channel description',
+        importance: Importance.max,
+        priority: Priority.high,
+        showWhen: true,
       );
     }
 
-    NotificationDetails notificationDetails = NotificationDetails(android: androidDetails);
-    List<dynamic> titles = [], bodies = [];
 
-    titles = jsonDecode(message.notification!.title!);
-    bodies = jsonDecode(message.notification!.body!);
-    final langIndex = lang == 'AR' ? 1 : 0;
+    iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      subtitle: 'Route 65',
+      threadIdentifier: appChannelId
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(android: androidDetails);
 
     FlutterLocalNotificationsPlugin().show(
-      message.notification.hashCode,
-      titles[langIndex],
-      bodies[langIndex],
-      notificationDetails,
+      message.notification.hashCode ,
+      message.notification!.title!  ,
+      message.notification!.body!   ,
+      notificationDetails           ,
     );
   }
 }

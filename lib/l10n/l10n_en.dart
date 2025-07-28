@@ -345,7 +345,7 @@ class L10nEn extends L10n {
   String get route65_recommendation => 'What Route 65 recommend for you';
 
   @override
-  String get forevery => 'for every # you get *% discount';
+  String get forevery => 'Every # tokens = *% discount';
 
   @override
   String get use => 'use';
@@ -360,8 +360,23 @@ class L10nEn extends L10n {
   String get signout => 'Sign out';
 
   @override
-  String get support => 'call center';
+  String get support => 'Call Center';
 
   @override
-  String get topfans_instagram => 'top fan page';
+  String get topfans_instagram => 'Instagram top fan page';
+
+  @override
+  String get apptopfans => 'App top users';
+
+  @override
+  String get instagram_page => 'our instagram page';
+
+  @override
+  String get facebook_page => 'our facebook page';
+
+  @override
+  String get welcome => 'Welcome';
+
+  @override
+  String get yve => 'You have';
 }

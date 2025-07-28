@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
+import 'package:route65/app_top_fans.dart';
 import 'package:route65/auth_engine.dart';
 import 'package:route65/confirm_order.dart';
 import 'package:route65/dining_room_view.dart';
@@ -83,7 +84,8 @@ class MaterialLauncher extends StatelessWidget {
     return MaterialApp(
       theme: theme,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
+      //locale: const Locale('ar'),
+      
       routes: {
         '/login' : (context) => LoginPage(),
         '/home' : (context) => HomePage(),
@@ -93,9 +95,17 @@ class MaterialLauncher extends StatelessWidget {
         '/confirm_order' : (context) => ConfirmOrder(),
         '/tokens_redeem' : (context) => TokensRedeem(),
         '/meal_suggestion' : (context) => MealSuggestionPage(),
+        '/app_topfans' : (context) => AppTopFans()
       },
       initialRoute: '/login',
       supportedLocales: L10n.supportedLocales,
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale != null && locale.languageCode.toLowerCase() == 'ar') {
+          return const Locale('ar');
+        }
+        
+        return const Locale('en');
+      },
       localizationsDelegates: const [
         L10n.delegate,
         GlobalMaterialLocalizations.delegate,

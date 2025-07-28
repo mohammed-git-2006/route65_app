@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
@@ -41,16 +42,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   bool loading = true;
   // --ANI-SET
   final nameAnimation = AnimationSet(), tokensAnimation = AnimationSet(), tokenUpAni = AnimationSet(), qrCodeAnimation = AnimationSet();
-  final mapAnimation = AnimationSet(), basketAnimation = AnimationSet();
+  final mapAnimation = AnimationSet(), basketAnimation = AnimationSet(), voucherAnimation = AnimationSet();
+  String voucherString = '';
 
   void setupNotifications() async {
     final notificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    const AndroidInitializationSettings androidInitSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
-
+    const AndroidInitializationSettings androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings iosInitSettings = DarwinInitializationSettings();
-
     const InitializationSettings initSettings = InitializationSettings(
       android: androidInitSettings,
       iOS: iosInitSettings,
@@ -66,9 +65,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
     final fcm = await FirebaseMessaging.instance.getToken();
     await userProfile.updateFCM(fcm);
+    await userProfile.updateLanguage(L10n.of(context)!.localeName);
 
     FirebaseMessaging.onMessage.listen((event) {
-      if (event.data.length != 0) {
+      if (event.data.isNotEmpty) {
         if (event.data.containsKey('DELIVERING')) {
           setState(() {
             currentOrderStatus = 'DELIVERING';
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   void onStatusDone() {
-    userProfile.update(no_orders: userProfile.no_orders??0 + 1);
+    userProfile.incrementOrders().then((_) => { setState(() {}) });
     showDialog(context: context, builder: (context) {
       return AlertDialog(
         content: Container(
@@ -166,25 +166,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   late bool fromServerIsTakeaway;
   late String fromServerLocation, fromServerClosePlace, fromServerTakeawayLocation;
 
-  Future<void> loadServerOrderData() async {
-    if (userProfile.waiting_order??false) {
-      final Uri fsbUri = Uri.parse('https://www.route-65-dashboard.com/api/order_items/${userProfile.coc}');
-      final fsbResponse = await http.get(fsbUri);
-      fromServerBasket = jsonDecode(fsbResponse.body)['items'] as List<dynamic>;
-      // fromServerTotalPrice = jsonDecode(fsbResponse.body)['total_price'] as double;
-      final _data = jsonDecode(fsbResponse.body) as Map<String, dynamic>;
-      fromServerTotalPrice = _data['total_price']*1.0;
-      fromServerIsTakeaway = (_data['order_method'] as String) == 'Take away';
-      if (!fromServerIsTakeaway) {
-        fromServerLocation = _data['location'] as String;
-        fromServerClosePlace = _data['close_place'] as String;
-      } else {
-        fromServerTakeawayLocation = _data['takeaway_place'] as String;
+  Future<bool> loadServerOrderData() async {
+    try {
+      if (userProfile.waiting_order??false) {
+        final Uri fsbUri = Uri.parse('https://www.route-65-dashboard.com/api/order_items/${userProfile.coc}');
+        final fsbResponse = await http.get(fsbUri);
+        fromServerBasket = jsonDecode(fsbResponse.body)['items'] as List<dynamic>;
+        // fromServerTotalPrice = jsonDecode(fsbResponse.body)['total_price'] as double;
+        final _data = jsonDecode(fsbResponse.body) as Map<String, dynamic>;
+        fromServerTotalPrice = _data['total_price']*1.0;
+        fromServerIsTakeaway = (_data['order_method'] as String) == 'Take away';
+        if (!fromServerIsTakeaway) {
+          fromServerLocation = _data['location'] as String;
+          fromServerClosePlace = _data['close_place'] as String;
+        } else {
+          fromServerTakeawayLocation = _data['takeaway_place'] as String;
+        }
       }
 
-      // timer?.cancel();
-      // if (timer_initialized) timer?.cancel();
-      runBackgroundOrderCheck();
+      return true;
+    } catch (err) {
+      if (! (userProfile.waiting_order??true)) {
+        userProfile.update(coc: null);
+      }
+
+
+      setState(() {
+        loading = false;
+        connectionError = true;
+      });
+
+      return false;
     }
   }
 
@@ -193,13 +205,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     setupNotifications();
     final lr = await loadTokensFromServer();
 
-    try {
-      print('[#]    COC --> ${userProfile.coc}');
+    if (!lr) {
+      setState(() {
+        connectionError = true;
+        loading = false;
+      });
 
-      try {
-        await loadServerOrderData();
-      } on Exception catch (e) {
-        userProfile.update(waiting_order: false, coc: '');
+      return;
+    }
+
+    bool shouldReloadImages = false;
+
+    try {
+      if (! await loadServerOrderData()) {
+        return;
       }
 
       final Uri url = Uri(host: 'www.route-65-dashboard.com', scheme: 'https', path: '/api/banner');
@@ -227,13 +246,39 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
       final Uri catsViewUrl = Uri.parse('https://www.route-65-dashboard.com/api/cats_view');
       final catsViewResponse = await http.get(catsViewUrl);
       catsViewOptions = jsonDecode(catsViewResponse.body);
+
+      final currentDocsDir = await getApplicationDocumentsDirectory();
+      final File lastImagesVersionFile = File('${currentDocsDir.path}/images_version.txt');
+      //if (lastImageVersionFile)
+      if (! await lastImagesVersionFile.exists()) {
+        await lastImagesVersionFile.create();
+        shouldReloadImages = true;
+      } else if (lastImagesVersionFile.readAsStringSync().isEmpty) {
+        await lastImagesVersionFile.writeAsString('1');
+        shouldReloadImages = true;
+      } else {
+        final int lastImagesVersion = int.parse(await lastImagesVersionFile.readAsString());
+        final Uri updateImagesOrder = Uri.parse('https://www.route-65-dashboard.com/api/images_version');
+        final updateImagesOrderResponse = await http.get(updateImagesOrder);
+        final int serverImagesVersion = int.parse(updateImagesOrderResponse.body);
+        shouldReloadImages = serverImagesVersion != lastImagesVersion;
+        if (shouldReloadImages) {
+          lastImagesVersionFile.openWrite(mode: FileMode.write);
+          await lastImagesVersionFile.writeAsString(serverImagesVersion.toString());
+        }
+      }
     } catch (err, trace) {
+      print('==> Connection error ==> $err $trace');
       console.log('[Connection check][1] $err $trace');
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('e-> $err, trace -> $trace')));
-      connectionError = true;
+      setState(() {
+        connectionError = true;
+        loading = false;
+      });
+
+      return;
     }
 
-    if (!lr) connectionError = true;
+    print('==> all urls were fetched and fine');
 
     try {
       final path = await getApplicationDocumentsDirectory();
@@ -241,10 +286,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         final catData = menuData[cat];
 
         for(final item in catData) {
-          final File saveFile = File('${path.path}/${item['i']}.jgp');
-          if (saveFile.existsSync()) {
+          final File saveFile = File('${path.path}/${item['i']}.jpg');
+          if (saveFile.existsSync() && !shouldReloadImages) {
             if (saveFile.lengthSync() != 0) {
-              menuSavedImages.addAll({item['i'] : FileImage(saveFile)});
+              final FileImage fileImage = FileImage(saveFile);
+              menuSavedImages.addAll({item['i'] : fileImage});
               continue;
             }
           }
@@ -254,7 +300,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           await saveFile.writeAsBytes(imageResponse.bodyBytes);
 
           menuSavedImages.addAll({'${item['i']}' : FileImage(saveFile)});
-          // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved image ${menuSavedImages.length}')));
         }
       }
 
@@ -265,8 +310,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           final bannerImageResponse = await http.get(bannerImageUrl);
           bannerImageFile.writeAsBytes(bannerImageResponse.bodyBytes);
         }
-
-        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved image')));
 
         menuSavedImages.addAll({'${bannerData['id']}' : FileImage(bannerImageFile)});
       }
@@ -288,21 +331,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
     setState(() {
       loading = false;
+      connectionError = false;
       tokenUpAni.start();
       catsDetails[0][4].start();
+      startAnimationsTrailFor(menuCats[0]);
     });
 
     if (userProfile.waiting_order??false) {
       try {
-        final Uri _url = Uri.parse("https://www.route-65-dashboard.com/api/order_status");
-        final _res = await http.post(_url, body: {
+        final res = await http.post(Uri.parse("https://www.route-65-dashboard.com/api/order_status"), body: {
           'key' : userProfile.coc
         });
 
-        if (_res.statusCode == 200) {
-          final _decoded = jsonDecode(_res.body) as Map<String, dynamic>;
-          if (_decoded['server_err'] as bool == false) {
+        final decodedResponse = jsonDecode(res.body) as Map<String, dynamic>;
+
+        if (res.statusCode == 200) {
+          final String serverStatus = decodedResponse['status'];
+          if (serverStatus == 'DONE') {
             onStatusDone();
+          }else {
+            setState(() {
+              currentOrderStatus = serverStatus;
+            });
           }
         }
       } finally {}
@@ -315,25 +365,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   Future<bool> getAdvertisementState() async {
     try {
       final Uri _url = Uri.parse("https://www.route-65-dashboard.com/api/advertisement");
-      final _res = await http.get(_url);
-      final _map = jsonDecode(_res.body) as Map<String, dynamic>;
-      final givenId = _map['id'];
+      final res = await http.get(_url);
+      final map = jsonDecode(res.body) as Map<String, dynamic>;
+      final givenId = map['id'];
 
       if (givenId == -1) return true;
 
-      final _dir = await getApplicationDocumentsDirectory();
-      File _file = File('${_dir.path}/advertisement_id.txt');
+      final dir = await getApplicationDocumentsDirectory();
+      File file = File('${dir.path}/advertisement_id.txt');
 
-      if (await _file.exists()) {
-        final fileContent = await _file.readAsString();
+      if (await file.exists()) {
+        final fileContent = await file.readAsString();
         final lastAdShown = int.tryParse(fileContent);
 
         if (lastAdShown == null) {
-          _file.writeAsString('$givenId');
+          file.writeAsString('$givenId');
         } else {
           bool r = lastAdShown != givenId;
           if (r) {
-            _file.writeAsString('$givenId', mode: FileMode.write);
+            file.writeAsString('$givenId', mode: FileMode.write);
           } else {
             return false;
           }
@@ -341,7 +391,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
         return true;
       } else {
-        await (await _file.create()).writeAsString('$givenId');
+        await (await file.create()).writeAsString('$givenId');
         return true;
       }
     } catch (e) {
@@ -358,7 +408,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         return SizedBox(
           height: size.height * .75,
           width: double.infinity,
-          child: WebViewWidget(controller: new WebViewController()..loadRequest(Uri.parse('https://www.route-65-dashboard.com/ad'))),
+          child: WebViewWidget(controller: WebViewController()..loadRequest(Uri.parse('https://www.route-65-dashboard.com/ad'))),
         );
       },);
     }
@@ -374,6 +424,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
     tokensAnimation.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
     tokenUpAni.init(this, .0, 1.0, Durations.medium2, Curves.easeIn);
     qrCodeAnimation.init(this, 1.0, 0.3, Durations.medium2, Curves.easeIn);
+    voucherAnimation.init(this, .0, 1.0, const Duration(seconds: 1), Curves.easeInOutBack);
+    voucherAnimation.controller.addStatusListener((s) {
+      if (s.isCompleted) {
+        voucherAnimation.reset();
+        voucherAnimation.start();
+      }
+    });
 
     nameAnimation.whenDone(tokensAnimation);
     nameAnimation.start();
@@ -524,104 +581,107 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
           final menuItem = modifiedList[index];
           final isLiked = userProfile.liked.contains(menuItem['id'] as int);
 
-          return Transform.translate(
-            offset: Offset(.0, -25 * math.sin(listItemsAnimations[category]![index].value * math.pi)),
-            child: Container(
-              margin: EdgeInsets.all(5),
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: cs.secondary.withAlpha(25), blurRadius: 10, spreadRadius: 5)
-                ]
-              ),
-              child: Column(
-                spacing: 5,
-                children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Hero(
-                            tag: '${menuItem['ne']}',
-                            child: Container(
-                              width: 13,
-                              height: 13,
-                              decoration: BoxDecoration(
-                                  color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
-                                  borderRadius:  BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
-                                  image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider, fit: BoxFit.cover),
+          return Opacity(
+            opacity: listItemsAnimations[category]![index].value,
+            child: Transform.translate(
+              offset: Offset(.0, -25 * math.sin(listItemsAnimations[category]![index].value * math.pi)),
+              child: Container(
+                margin: EdgeInsets.all(5),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(color: cs.secondary.withAlpha(25), blurRadius: 10, spreadRadius: 5)
+                  ]
+                ),
+                child: Column(
+                  spacing: 5,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Hero(
+                              tag: '${menuItem['ne']}',
+                              child: Container(
+                                width: 13,
+                                height: 13,
+                                decoration: BoxDecoration(
+                                    color: HSLColor.fromColor(cs.secondary).withLightness(.2 + (.4 / (index + 1))).toColor(),
+                                    borderRadius:  BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+                                    image: DecorationImage(image: menuSavedImages['${menuItem['i']}'] as ImageProvider, fit: BoxFit.cover),
+                                ),
                               ),
                             ),
                           ),
+
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: GestureDetector(
+                              onTap: () async{
+                                await userProfile.changeLiked(menuItem['id']);
+                                setState(() {
+
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(45),
+                                ),
+
+                                padding: EdgeInsets.all(7),
+                                child: isLiked ?  Image.asset('assets/heart_filled.png',    width: 15, color: Colors.red.shade800, colorBlendMode: BlendMode.srcIn) :
+                                                  Image.asset('assets/heart_unfilled.png',  width: 15),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+
+                    // SizedBox(),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
+                        Row(
+                          children: [
+                            Expanded(child: Center(child: Text('${menuItem[isAr ? 'na' : 'ne']}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.bold),))),
+                          ],
                         ),
 
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: GestureDetector(
-                            onTap: () async{
-                              await userProfile.changeLiked(menuItem['id']);
-                              setState(() {
+                        if (menuItem['c'].length != 0) Text('${category != 'Appetizers' ? menuItem['c'].map((c) {
+                          return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
+                        }) : (menuItem['q'] == 1? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: 10),),
 
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(45),
-                              ),
-
-                              padding: EdgeInsets.all(7),
-                              child: isLiked ?  Image.asset('assets/heart_filled.png',    width: 15, color: Colors.red.shade800, colorBlendMode: BlendMode.srcIn) :
-                                                Image.asset('assets/heart_unfilled.png',  width: 15),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-
-                  // SizedBox(),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 10, children: [
-                      Row(
-                        children: [
-                          Expanded(child: Center(child: Text('${menuItem[isAr ? 'na' : 'ne']}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.bold),))),
-                        ],
-                      ),
-
-                      if (menuItem['c'].length != 0) Text('${category != 'Appetizers' ? menuItem['c'].map((c) {
-                        return (c == 'GC' || c == 'FB') ? '' : menuData['cs'][c][0];
-                      }) : (menuItem['q'] == 1? '' : '${menuItem['q']} ${L10n.of(context)!.piece}')}', style: TextStyle(overflow: TextOverflow.ellipsis, fontWeight: FontWeight.w300, fontSize: 10),),
-
-                      Row(
-                        spacing: 5,
-                        mainAxisAlignment:MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${menuItem['p']} ${L10n.of(context)!.jd}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
-                          Row(children: [
-                            SizedBox(
-                              width: 30,
-                              height: 30,
-                              child: IconButton(
-                                style: IconButton.styleFrom(backgroundColor: cs.secondary),
-                                color: cs.surface,
-                                icon: FaIcon(FontAwesomeIcons.add, size: 15,),
-                                onPressed: () async {
-                                  openMealViewCallback(category, menuItem);
-                                },
-                              ),
-                            )
-                          ],)
-                        ],
-                      ),
-                    ],),
-                  )
-                ],
+                        Row(
+                          spacing: 5,
+                          mainAxisAlignment:MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${menuItem['p']} ${L10n.of(context)!.jd}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
+                            Row(children: [
+                              SizedBox(
+                                width: 30,
+                                height: 30,
+                                child: IconButton(
+                                  style: IconButton.styleFrom(backgroundColor: cs.secondary),
+                                  color: cs.surface,
+                                  icon: FaIcon(FontAwesomeIcons.add, size: 15,),
+                                  onPressed: () async {
+                                    openMealViewCallback(category, menuItem);
+                                  },
+                                ),
+                              )
+                            ],)
+                          ],
+                        ),
+                      ],),
+                    )
+                  ],
+                ),
               ),
             ),
           );
@@ -655,83 +715,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
   String currentOrderStatus = '';
 
-  void runBackgroundOrderCheck() {
-    timer_initialized = true;
-    // timer = Timer.periodic(Duration(seconds: 2), timerCallback);
-  }
-
-  void timerCallback(dynamic timer) {
-    final Uri checkingUrl = Uri.parse('https://www.route-65-dashboard.com/api/order_status');
-
-    if (userProfile.waiting_order??false) {
-      final key = userProfile.coc;
-      final body = {
-        'key' : key
-      };
-
-      http.post(checkingUrl, body: body).then((response) {
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-          if (data['server_err'] as bool) {
-            checkingOrderStatusErrCallback('L1');
-            print('server_err encountered --> ###');
-          } else {
-            setState(() {
-              currentOrderStatus = data['status'] as String;
-              myBasket.clear();
-              print('current  status --> ${currentOrderStatus} for order ${userProfile.coc}');
-              if (currentOrderStatus == 'DONE') {
-                userProfile.update(no_orders: userProfile.no_orders??0 + 1);
-                showDialog(context: context, builder: (context) {
-                  return AlertDialog(
-                    content: Container(
-                      height: 350,
-                      padding: EdgeInsets.all(25),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              spacing: 10,
-                              children: [
-                                SizedBox(height: 150, child: lottieLib.Lottie.asset('assets/burger.json', repeat: false)),
-                                Text(L10n.of(context)!.sehha, style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
-                              ],
-                            ),
-                          ),
-
-                          Positioned.fill(
-                            child: lottieLib.Lottie.asset('assets/congrats.json'),
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                });
-
-                loadTokensFromServer().then((r) {
-                  if (r) {
-                    setState(() {});
-                  }
-                });
-
-                userProfile.update(waiting_order: false, coc: '');
-                timer.cancel();
-                usingVoucher = false;
-                voucherDiscountPerc = 0.0;
-              }
-            });
-          }
-        } else {
-          checkingOrderStatusErrCallback('L2 --> ${response.body}');
-        }
-      }).onError((err, s) {
-        checkingOrderStatusErrCallback('$err');
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -832,34 +815,58 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                     Container(
                       margin: EdgeInsets.only(left: 15, right: 15, bottom: 25, top: 10),
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                           color: cs.secondary.withAlpha(15),
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(color: Colors.grey.shade300, width: 2)
                       ),
 
-                      child: ListTile(
-                        // leading: Image.asset('assets/instagram.png', height: 35,),
-                        leading: FaIcon(FontAwesomeIcons.instagram, color: cs.primary, size: 35,),
-                        title: Text(dic.topfans_instagram),
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) {
-                            final controller = WebViewController()
-                              ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                              ..loadRequest(Uri.parse('https://www.route-65-dashboard.com/topfan'));
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Text('🔥', style: TextStyle(fontSize: 20),),
+                            title: Text(dic.topfans_instagram, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                                final controller = WebViewController()
+                                  ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                                  ..loadRequest(Uri.parse('https://www.route-65-dashboard.com/topfan'));
+                          
+                          
+                                return Scaffold(
+                                  body: SizedBox(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: WebViewWidget(controller: controller, ),
+                                  ),
+                                );
+                              }));
+                            },
+                          
+                          ),
 
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Text('🏆', style: TextStyle(fontSize: 20),),
+                            title: Text(dic.apptopfans, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            onTap: () {
+                              Navigator.of(context).pushNamed('/app_topfans');
+                            },
+                          ),
 
-                            return Scaffold(
-                              body: Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                child: WebViewWidget(controller: controller, ),
-                              ),
+                          ...[
+                              [dic.instagram_page, 'instagram.png', ],
+                              [dic.facebook_page, 'facebook.png',   ]
+                            ].map((element) {
+                            return ListTile(
+                              leading: ClipOval(child: Image.asset('assets/${element[1]}', width: 30)),
+                              title: Text(element[0], style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              contentPadding: EdgeInsets.zero,
                             );
-                          }));
-                        },
-
+                          })
+                        ],
                       )
                     ),
 
@@ -903,19 +910,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
+                          spacing: 5,
                           children: [
-                            Text(
-                              dic.current_location,
-                              style: TextStyle(color: cs.surface, fontSize: 16),
+                            CircleAvatar(
+                              radius: 25,
+                              backgroundImage: NetworkImage(userProfile.pic ?? ''),
                             ),
+                            
+                            SizedBox(width: 0),
 
-                            Text(
-                              userProfile.location ?? ' -- ',
-                              style: TextStyle(color: cs.surface, fontSize: 16, decoration: TextDecoration.underline, decorationColor: cs.surface,
-                                decorationThickness: 1.25),
-                            ),
-                          ],
-                        ),
+
+                            Text('${dic.welcome}', style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, fontSize: 16,),),
+
+                            Text('${userProfile.name} 👋', style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, fontSize: 16,),
+                              overflow: TextOverflow.ellipsis,),
+                          ]
+                        )
                       ),
                     ),
 
@@ -960,8 +970,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                             );
                           },
                           options: CarouselOptions(
-                            height: 300,
+                            height: 200,
                             autoPlay: true,
+
                           )
                         ),
 
@@ -990,14 +1001,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                                             for(int x=0;x<catsDetails.length;++x) {
                                               if (x != i) {
-                                                catsDetails[x][4].reset();
+                                                catsDetails[x][4].reverse();
                                               } else {
                                                 catsDetails[x][4].start();
                                               }
                                             }
                                           });
                                         },
-                                        child: Container(
+                                        child: AnimatedContainer(
+                                          duration: Durations.medium1,
+                                          curve: Curves.easeIn,
                                           width: size.width * .25,
                                           height: size.width * .25,
                                           decoration: BoxDecoration(
@@ -1032,33 +1045,69 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: GestureDetector(
-                            onTap: () async {
-                              final sugR = await Navigator.of(context).pushNamed('/meal_suggestion', arguments: {
-                                'menuData' : menuData,
-                                'images' : menuSavedImages
-                              });
+                          child: Row(
+                            spacing: 10,
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final sugR = await Navigator.of(context).pushNamed('/meal_suggestion', arguments: {
+                                      'menuData' : menuData,
+                                      'images' : menuSavedImages
+                                    });
 
-                              if (sugR != null) {
-                                final dirInfo = sugR as Map<String, dynamic>;
+                                    if (sugR != null) {
+                                      final dirInfo = sugR as Map<String, dynamic>;
 
-                                openMealViewCallback(dirInfo['cat'], dirInfo['menuItem']);
-                              }
-                            },
+                                      openMealViewCallback(dirInfo['cat'], dirInfo['menuItem']);
+                                    }
+                                  },
 
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: cs.secondary.withAlpha(15),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(color: Colors.grey.shade300, width: 1),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: cs.secondary.withAlpha(15),
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(color: Colors.grey.shade300, width: 1),
+                                    ),
+
+                                    padding: EdgeInsets.all(10),
+
+                                    child: Center(child: Text(dic.first_time_order, textAlign: TextAlign.center,style: TextStyle(decoration: TextDecoration.underline,
+                                      color:cs.secondary, fontWeight:FontWeight.bold),))
+                                  ),
+                                ),
                               ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).pushNamed('/dine_room');
+                                  },
 
-                              padding: EdgeInsets.all(10),
+                                  child: Container(
+                                      width: double.infinity,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        color: cs.secondary.withAlpha(15),
+                                        borderRadius: BorderRadius.circular(15),
+                                        border: Border.all(color: Colors.grey.shade300, width: 1),
+                                      ),
 
-                              child: Center(child: Text(dic.first_time_order, textAlign: TextAlign.center,style: TextStyle(decoration: TextDecoration.underline,
-                                color:cs.secondary, fontWeight:FontWeight.bold),))
-                            ),
+                                      padding: EdgeInsets.all(10),
+
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        spacing: 15,
+                                        children: [
+                                          Image.asset('assets/dining-room.png', width: 25,),
+                                          Text('${dic.tables}')
+                                        ],
+                                      )
+                                  ),
+                                ),
+                              )
+                            ],
                           ),
                         ),
 
@@ -1078,7 +1127,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                         usingVoucher = true;
                                         checkingVoucher = false;
                                         voucherDiscountPerc = rMap['perc'] as double;
-                                        voucherController.text = rMap['voucher'] as String;
+                                        voucherString = rMap['voucher'] as String;
+                                        voucherController.text = voucherString;
                                       });
                                     }
 
@@ -1090,6 +1140,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                       setState(() {
                                         loading = false;
                                         connectionError = !loadingR;
+                                        voucherAnimation.start();
                                       });
                                     });
                                   },);
@@ -1105,28 +1156,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   // --BUTTON-ASSETS
                                   child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                     Image.asset('assets/coin.png', width: 28,),
-                                    Transform.translate(offset: Offset(0, 3), child: Text('${userProfile.tokens?.toStringAsFixed(2)} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2}', style: TextStyle(color: cs.primary, fontSize: 16),)),
-                                  ],),
-                                ),
-                              ),
-                            ),
+                                    Transform.translate(offset: Offset(-5, 0), child: Text('${userProfile.tokens?.toStringAsFixed(2)} ${userProfile.tokens! > 10.0 ? dic.points_1 : dic.points_2} 🎉', style: TextStyle(color: cs.primary, fontSize: 16, fontWeight: FontWeight.bold),)),
+                                    Expanded(child: SizedBox()),
+                                    Transform.scale(
+                                      scale: (math.sin(voucherAnimation.value * math.pi) * .1) + 1,
 
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).pushNamed('/dine_room');
-                                },
-                                child: Container(
-                                  height: 70,
-                                  padding: EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                      color: cs.secondary.withAlpha(15),
-                                      borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(color: Colors.grey.shade300, width: 1),
-                                  ),
-                                  child: Row(spacing: 20, mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                    Image.asset('assets/dining-room.png', width: 35,),
-                                    Transform.translate(offset: Offset(0, 2), child: Text(dic.tables, style: TextStyle(color: cs.primary, fontSize: 16),))
+                                      child: Visibility(
+                                        visible: usingVoucher,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(7.5),
+                                            color: cs.secondary,
+                                            boxShadow: [
+                                              BoxShadow(color: Colors.grey.shade300, blurRadius: 3, spreadRadius: 3)
+                                            ]
+                                          ),
+                                        
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text('#$voucherString', style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, fontSize: 15),),
+                                        ),
+                                      ),
+                                    ),
                                   ],),
                                 ),
                               ),
@@ -1136,21 +1186,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
 
 
                         getMenuItemsView(selectedCategory),
-
-                        SizedBox(
-                          height: 0,
-                          child: ElevatedButton(child: Text('Reset'), onPressed: () async {
-                            await GoogleSignIn().signOut();
-                            // await FirebaseAuth.instance.signOut();
-                            final pref = await SharedPreferences.getInstance();
-                            pref.clear();
-                            nameAnimation.dispose();
-                            tokensAnimation.dispose();
-                            FirebaseAuth.instance.currentUser!.delete();
-                            await FirebaseFirestore.instance.collection('app-users').doc(userProfile.uid).delete();
-                            Navigator.of(context).popAndPushNamed('/login');
-                          },),
-                        ),
                       ]),
                     ),
                   ],),
@@ -1193,18 +1228,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                           )
                         ),
 
-                        ElevatedButton(
-                          child: Text('Reset'),
-                          onPressed : () {
-                            userProfile.update(waiting_order: false, coc: null);
-                            setState(() {
-
-                            });
-                          }
-                        ),
-
                         Divider(color: Colors.grey.shade400, thickness: 2,),
-                        // SizedBox(height: 10,),
 
                         Expanded(
                           child: SingleChildScrollView(
@@ -1411,7 +1435,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                       http.post(url, body: {
                                         'code' : voucherController.text
                                       }).then((response) {
-                                        print(response.body);
                                         try {
                                           final body = jsonDecode(response.body);
                                           print(body);
@@ -1429,6 +1452,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                                 usingVoucher = true;
                                                 checkingVoucher = false;
                                                 voucherDiscountPerc = body['perc'] * 100.0;
+                                                voucherString = voucherController.text;
                                               });
                                             } else {
                                               setState(() {
@@ -1490,7 +1514,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   spacing: 15,
                                   children: [
-                                    Text(voucherController.text, style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary),),
+                                    Text(voucherString, style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary),),
                                     Text('$voucherDiscountPerc %', style: TextStyle(fontWeight: FontWeight.bold, color: cs.secondary),),
                                     FaIcon(FontAwesomeIcons.receipt, color: cs.secondary, size:20)
                                   ],
@@ -1579,7 +1603,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                               'phone' : userProfile.phone,
                               'basket_items' : jsonEncode(refinedBasket),
                               'used_voucher' : usingVoucher,
-                              'voucher' : usingVoucher ? voucherController.text : null,
+                              'voucher' : usingVoucher ? voucherString : null,
                               'price_no_voucher' : totalBasketPrice,
                               'voucher_perc' : voucherDiscountPerc,
                               'total_price' : totalBasketPrice * (usingVoucher ? (1.0 - (voucherDiscountPerc / 100.0)) : 1.0),

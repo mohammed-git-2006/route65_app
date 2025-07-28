@@ -112,11 +112,16 @@
   "sug_chicken" : "دجاج",
   "sug_hotdog" : "هوت دوق",
   "route65_recommendation" : "شو اختارلك روت 65:",
-  "forevery" : "لكل # تحصل على *% خصم",
+  "forevery" : "كل # = *% خصم",
   "use" : "استخدم",
   "redeem" : "إستبدل",
   "no_tokens_enough" : "لا توجد نقاط كافية",
   "signout" : "تسجيل الخروج",
   "support" : "الكول سنتر",
-  "topfans_instagram" : "توب فان"
+  "topfans_instagram" : "انستغرام توب فان",
+  "apptopfans" : "توب فان تطبيق روت 65",
+  "instagram_page" : "صفحة الانستغرام",
+  "facebook_page" : "صفحة الفيسبوك",
+  "welcome" : "مرحبا",
+  "yve" : "لديك"
 }

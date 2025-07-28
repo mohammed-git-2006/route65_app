@@ -1,6 +1,3 @@
-
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -717,9 +714,6 @@ class _MealViewState extends State<MealView> with TickerProviderStateMixin {
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 15, top: 15, left: 20, right: 20),
             decoration: BoxDecoration(
               color: cs.surface,
-              boxShadow: [
-                BoxShadow(color: Colors.grey.shade300, spreadRadius: 5, blurRadius: 10)
-              ]
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

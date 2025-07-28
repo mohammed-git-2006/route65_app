@@ -345,7 +345,7 @@ class L10nAr extends L10n {
   String get route65_recommendation => 'شو اختارلك روت 65:';
 
   @override
-  String get forevery => 'لكل # تحصل على *% خصم';
+  String get forevery => 'كل # = *% خصم';
 
   @override
   String get use => 'استخدم';
@@ -363,5 +363,20 @@ class L10nAr extends L10n {
   String get support => 'الكول سنتر';
 
   @override
-  String get topfans_instagram => 'توب فان';
+  String get topfans_instagram => 'انستغرام توب فان';
+
+  @override
+  String get apptopfans => 'توب فان تطبيق روت 65';
+
+  @override
+  String get instagram_page => 'صفحة الانستغرام';
+
+  @override
+  String get facebook_page => 'صفحة الفيسبوك';
+
+  @override
+  String get welcome => 'مرحبا';
+
+  @override
+  String get yve => 'لديك';
 }

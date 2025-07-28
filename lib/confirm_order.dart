@@ -163,7 +163,9 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
               isTakeaway = newVal;
             });
           },
-          child: Container(
+          child: AnimatedContainer(
+            duration: Durations.medium1,
+            curve: Curves.easeIn,
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: Colors.grey.shade400),
@@ -241,7 +243,7 @@ class _ConfirmOrderState extends State<ConfirmOrder> with TickerProviderStateMix
                 ),
 
 
-                if (!(orderInformation['used_voucher'] as bool)) infoLine('${dic.total_price} : ', '${orderInformation['total_price']}', 2),
+                if (!(orderInformation['used_voucher'] as bool)) infoLine('${dic.total_price} : ', '${(orderInformation['total_price'] as double).toStringAsFixed(2)}', 2),
 
                 SizedBox(height: 15,),
 
