@@ -12,6 +12,14 @@
 .swiftpm/
 migrate_working_dir/
 
+firebase.json
+android/app/google-services.json
+android/app/src/main/AndroidManifest.xml
+
+run.bat
+debug.keystore
+
+
 # IntelliJ related
 *.iml
 *.ipr

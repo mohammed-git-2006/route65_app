@@ -159,7 +159,8 @@ class L10nEn extends L10n {
   String get your_order_t => 'Your order is being prepared!';
 
   @override
-  String get login_error => 'Problem happened while trying to login, check your connection and try again later';
+  String get login_error =>
+      'Problem happened while trying to login, check your connection and try again later';
 
   @override
   String get finish => 'finish';
@@ -327,10 +328,12 @@ class L10nEn extends L10n {
   String get no_vouchers_for_redeem => 'No vouchers for redeem';
 
   @override
-  String get rt_header => 'order from the app and get points to redeem for discounts !';
+  String get rt_header =>
+      'order from the app and get points to redeem for discounts !';
 
   @override
-  String get first_time_order => 'First time ordering from route 65 ? or don\'t know what to order?';
+  String get first_time_order =>
+      'First time ordering from route 65 ? or don\'t know what to order?';
 
   @override
   String get sug_beef => 'Beef';

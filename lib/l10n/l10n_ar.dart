@@ -159,7 +159,8 @@ class L10nAr extends L10n {
   String get your_order_t => 'طلبك قيد التّحضير!';
 
   @override
-  String get login_error => 'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';
+  String get login_error =>
+      'حدث خطأ أثناء محاولة تسجيل الدّخول، تحقق من إتصالك بالإنترنت وحاول مرّة أخرى';
 
   @override
   String get finish => 'إنهاء';
